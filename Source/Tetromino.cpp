@@ -5,6 +5,7 @@
 #include "Tetromino.h"
 
 #include "Constants.h"
+#include "Game.h"
 
 #include <array>
 
@@ -68,15 +69,19 @@ const std::unordered_map<TetrominoUtil::TetrominoType,
         {TetrominoUtil::TetrominoType::BLOCK,
                 // All states are the same
                 std::array< std::array<ivec2, 4>, 4>  {{
-                        std::array<ivec2, 4>{{vec2{1, 1}, vec2{2, 1}, vec2{1, 2}, vec2{2, 2}}},
-                        std::array<ivec2, 4>{{vec2{1, 1}, vec2{2, 1}, vec2{1, 2}, vec2{2, 2}}},
-                        std::array<ivec2, 4>{{vec2{1, 1}, vec2{2, 1}, vec2{1, 2}, vec2{2, 2}}},
-                        std::array<ivec2, 4>{{vec2{1, 1}, vec2{2, 1}, vec2{1, 2}, vec2{2, 2}}},
+                        std::array<ivec2, 4>{{ivec2{1, 1}, ivec2{2, 1}, ivec2{1, 2}, ivec2{2, 2}}},
+                        std::array<ivec2, 4>{{ivec2{1, 1}, ivec2{2, 1}, ivec2{1, 2}, ivec2{2, 2}}},
+                        std::array<ivec2, 4>{{ivec2{1, 1}, ivec2{2, 1}, ivec2{1, 2}, ivec2{2, 2}}},
+                        std::array<ivec2, 4>{{ivec2{1, 1}, ivec2{2, 1}, ivec2{1, 2}, ivec2{2, 2}}},
                 }}
         },
 };
 
-Tetromino::Tetromino(TetrominoUtil::TetrominoType type) : tetromino_type(type), rotation_state(0)
+Tetromino::Tetromino(TetrominoUtil::TetrominoType type, Game& game)
+        : tetromino_type(type),
+          tetromino_state(TetrominoUtil::TetrominoState::MOVING),
+          rotation_state(0),
+          bound_game(game)
 {
     std::array<ivec2, TetrominoUtil::BLOCKS_IN_TETROMINO> relative_coords =
             tetromino_rotations.find(type)->second[rotation_state];
@@ -89,101 +94,212 @@ Tetromino::Tetromino(TetrominoUtil::TetrominoType type) : tetromino_type(type), 
         relative_coords[i] += ivec2(half_game_width, 0);
     }
 
-    blocks = relative_coords;
+    // Copy relative coords into blocks vector
+    for (int i = 0; i < TetrominoUtil::BLOCKS_IN_TETROMINO; ++i) {
+        blocks.insert(relative_coords[i]);
+    }
 }
 
 void Tetromino::translate_left() {
+    if (tetromino_state == TetrominoUtil::TetrominoState::LANDED) {
+        return; // End function if the tetromino has landed
+    }
+
     // Check if block can be translated without hitting the wall
-    for (int i = 0; i < TetrominoUtil::BLOCKS_IN_TETROMINO; ++i) {
-        if (blocks[i].x < 1) {
+    for (auto iter = blocks.cbegin(); iter != blocks.cend(); ++iter) {
+        if (iter->x < 1) {
             return; // Exit the function because translation is impossible
                     // without hitting the wall
         }
     }
 
+
+    std::set<glm::ivec2> old_blocks = blocks; // Store blocks before translation
+
     // Translate block
-    for (int i = 0; i < TetrominoUtil::BLOCKS_IN_TETROMINO; ++i) {
-        blocks[i].x -= 1;
+    for (auto iter = blocks.cbegin(); iter != blocks.cend(); ++iter) {
+        iter->x -= 1;
     }
-    top_left_point.x -= 1;
+
+    if (!bound_game.check_collision(*this)) {
+        top_left_point.x -= 1;      // Translate the top left point
+                                    // because it is ok to translate
+    } else {
+        blocks = old_blocks;        // Revert the translation
+    }
 }
 
 void Tetromino::translate_right() {
+    if (tetromino_state == TetrominoUtil::TetrominoState::LANDED) {
+        return; // End function if the tetromino has landed
+    }
+
     // Check if block can be translated without hitting the wall
-    for (int i = 0; i < TetrominoUtil::BLOCKS_IN_TETROMINO; ++i) {
-        if (blocks[i].x > GAME_WIDTH - 2) {
+    for (auto iter = blocks.cbegin(); iter != blocks.cend(); ++iter) {
+        if (iter->x > GAME_WIDTH - 2) {
             return; // Exit the function because translation is impossible
                     // without hitting the wall
         }
     }
 
+    std::set<glm::ivec2> old_blocks = blocks; // Store blocks before translation
+
     // Translate block
-    for (int i = 0; i < TetrominoUtil::BLOCKS_IN_TETROMINO; ++i) {
-        blocks[i].x += 1;
+    for (auto iter = blocks.cbegin(); iter != blocks.cend(); ++iter) {
+        iter->x += 1;
     }
-    top_left_point.x += 1;
+
+    if (!bound_game.check_collision(*this)) {
+        top_left_point.x += 1;      // Translate the top left point
+                                    // because it is ok to translate
+    } else {
+        blocks = old_blocks;        // Revert the translation
+    }
 }
 
 void Tetromino::translate_down() {
     // Check if block can be translated without hitting the wall
-    for (int i = 0; i < TetrominoUtil::BLOCKS_IN_TETROMINO; ++i) {
-        if (blocks[i].y > GAME_HEIGHT - 2) {
+    for (auto iter = blocks.cbegin(); iter != blocks.cend(); ++iter) {
+        if (iter->y > GAME_HEIGHT - 2) {
             return; // Exit the function because translation is impossible
                     // without hitting the wall
         }
     }
 
+    std::set<glm::ivec2> old_blocks = blocks; // Store blocks before translation
+
     // Translate block
-    for (int i = 0; i < TetrominoUtil::BLOCKS_IN_TETROMINO; ++i) {
-        blocks[i].y += 1;
+    for (auto iter = blocks.cbegin(); iter != blocks.cend(); ++iter) {
+        iter->y += 1;
     }
-    top_left_point.y += 1;
+
+    if (!bound_game.check_collision(*this)) {
+        top_left_point.y += 1;      // Translate the top left point
+                                    // because it is ok to translate
+    } else {
+        blocks = old_blocks;        // Revert the translation
+        land_block();               // Set the block as landed
+    }
 }
 
 void Tetromino::rotate_left() {
+    if (tetromino_state == TetrominoUtil::TetrominoState::LANDED) {
+        return; // End function if the tetromino has landed for landed tetromino cannot be rotated
+    }
+
     // Update rotation_state
     rotation_state = (rotation_state > 0) ? rotation_state - 1 : 3;
 
     // Fetch relative positions of new rotation
-    auto relative_position = tetromino_rotations.find(tetromino_type)->second[rotation_state];
+    auto relative_coords = tetromino_rotations.find(tetromino_type)->second[rotation_state];
 
     // Transform relative positions into game space
     for (int i = 0; i < TetrominoUtil::BLOCKS_IN_TETROMINO; ++i) {
-        relative_position[i] += top_left_point;
+        relative_coords[i] += top_left_point;
     }
 
-    blocks = relative_position;
+    // Store old block positions
+    std::set<glm::ivec2> old_blocks = blocks;
 
-    // Wall kick
+    // Copy relative coords into blocks vector
     for (int i = 0; i < TetrominoUtil::BLOCKS_IN_TETROMINO; ++i) {
-        if (relative_position[i].x < 0) {
-            translate_right();
-        } else if (relative_position[i].x > GAME_WIDTH - 1) {
-            translate_left();
+        blocks.insert(relative_coords[i]);
+    }
+
+    if (!bound_game.check_collision(*this)) {
+        // Wall kick
+        for (int i = 0; i < TetrominoUtil::BLOCKS_IN_TETROMINO; ++i) {
+            if (relative_coords[i].x < 0) {
+                translate_right();
+            } else if (relative_coords[i].x > GAME_WIDTH - 1) {
+                translate_left();
+            }
         }
+    } else {
+        blocks = old_blocks;
     }
 }
 
 void Tetromino::rotate_right() {
+    if (tetromino_state == TetrominoUtil::TetrominoState::LANDED) {
+        return; // End function if the tetromino has landed for landed tetromino cannot be rotated
+    }
+
     // Update rotation_state
     rotation_state = (rotation_state < 3) ? rotation_state + 1 : 0;
 
     // Fetch relative positions of new rotation
-    auto relative_position = tetromino_rotations.find(tetromino_type)->second[rotation_state];
+    auto relative_coords = tetromino_rotations.find(tetromino_type)->second[rotation_state];
 
     // Transform relative positions into game space
     for (int i = 0; i < TetrominoUtil::BLOCKS_IN_TETROMINO; ++i) {
-        relative_position[i] += top_left_point;
+        relative_coords[i] += top_left_point;
     }
 
-    blocks = relative_position;
+    // Store old block positions
+    std::set<glm::ivec2> old_blocks = blocks;
 
-    // Wall kick
+    // Copy relative coords into blocks vector
     for (int i = 0; i < TetrominoUtil::BLOCKS_IN_TETROMINO; ++i) {
-        if (relative_position[i].x < 0) {
-            translate_right();
-        } else if (relative_position[i].x > GAME_WIDTH - 1) {
-            translate_left();
+        blocks.insert(relative_coords[i]);
+    }
+
+    if (!bound_game.check_collision(*this)) {
+        // Wall kick
+        for (int i = 0; i < TetrominoUtil::BLOCKS_IN_TETROMINO; ++i) {
+            if (relative_coords[i].x < 0) {
+                translate_right();
+            } else if (relative_coords[i].x > GAME_WIDTH - 1) {
+                translate_left();
+            }
+        }
+    } else {
+        blocks = old_blocks;
+    }
+}
+
+void Tetromino::remove_blocks(const std::vector<glm::ivec2>& blocks_to_remove) {
+    if (tetromino_state != TetrominoUtil::TetrominoState::LANDED) {
+        return; // End function if the tetromino has not landed yet
+    }
+
+    for (auto block_to_remove : blocks_to_remove) {
+        blocks.erase(block_to_remove);
+    }
+
+    translate_down();
+}
+
+void Tetromino::land_block() {
+    tetromino_state = TetrominoUtil::TetrominoState::LANDED;
+
+    bound_game.add_landed(*this);
+}
+
+bool Tetromino::is_block_part(const glm::ivec2 &block) const {
+    return blocks.find(block) != blocks.end();
+}
+
+bool Tetromino::tetromino_overlaps(const Tetromino &t) const {
+    for (auto iter = t.blocks.cbegin(); iter != t.blocks.cend(); ++iter) {
+        if (is_block_part(*iter)) {
+            return true;
         }
     }
+    return false;
+}
+
+int Tetromino::highest_block() const {
+    if (blocks.size() == 0) {
+        throw std::runtime_error("error: highest_block() called on tetromino with no blocks");
+    }
+
+    int highest_block = blocks.cbegin()->y;
+    for (auto iter = ++blocks.cbegin(); iter != blocks.cend(); ++iter) {
+        if (iter->y < highest_block) {
+            highest_block = iter->y;
+        }
+    }
+
+    return highest_block;
 }

@@ -10,6 +10,8 @@
 #include <unordered_map>
 #include <array>
 #include <glm/vec2.hpp>
+#include <set>
+#include <vector>
 
 namespace TetrominoUtil {
     static constexpr int BLOCKS_IN_TETROMINO = 4;
@@ -22,10 +24,18 @@ namespace TetrominoUtil {
         REVERSE_STAIR = 4,
         BLOCK         = 5,
     };
+
+    enum class TetrominoState {
+        MOVING        = 0,
+        LANDED        = 1,
+    };
 }
 
+class Game;
+
 class Tetromino {
-    Tetromino(TetrominoUtil::TetrominoType type);
+public:
+    Tetromino(TetrominoUtil::TetrominoType type, Game& game);
 
     // Translation functions
     void translate_left();
@@ -35,16 +45,28 @@ class Tetromino {
     // Rotation functions
     void rotate_left();
     void rotate_right();
+
+    void remove_blocks(const std::vector<glm::ivec2>& blocks_to_remove);
+
+    bool is_block_part(const glm::ivec2 &block) const; // Check if block is a part of this tetromino
+    bool tetromino_overlaps(const Tetromino& t) const; // Check if other tetromino overlaps this tetromino
+
+    int highest_block() const; // Returns y coord of highest block in tetromino
 private:
+
+    Game& bound_game; // The game which the Tetromino is a part of
+
+    void land_block();
 
     const static std::unordered_map<TetrominoUtil::TetrominoType,
             std::array< std::array<glm::ivec2, TetrominoUtil::BLOCKS_IN_TETROMINO>, 4>, EnumClassHash> tetromino_rotations;
 
     glm::ivec2 top_left_point; // Point at the very top left of the
                                // imaginary 4x4 relative space tetrominos reside in
-    std::array<glm::ivec2, TetrominoUtil::BLOCKS_IN_TETROMINO> blocks;
+    std::set<glm::ivec2> blocks;
 
     TetrominoUtil::TetrominoType tetromino_type;
+    TetrominoUtil::TetrominoState tetromino_state;
     int rotation_state;
 };
 
