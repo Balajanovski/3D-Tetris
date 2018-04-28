@@ -8,6 +8,10 @@
 #include "Tetromino.h"
 #include "Constants.h"
 
+#include "InputQueue.h"
+#include "ViewComponent.h"
+#include "RandomNumberComponent.h"
+
 #include <vector>
 #include <glm/vec2.hpp>
 
@@ -20,9 +24,13 @@ public:
     bool check_collision(const Tetromino& new_pos) const;
 private:
     Tetromino current_tetromino;
-    std::set<Tetromino> landed;
+    std::vector<Tetromino> landed;
 
     bool game_over = false;
+
+    //InputQueue    input_queue;
+    //ViewComponent view_component;
+    RandomNumberComponent rng_component;
 };
 
 

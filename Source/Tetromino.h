@@ -17,17 +17,21 @@ namespace TetrominoUtil {
     static constexpr int BLOCKS_IN_TETROMINO = 4;
 
     enum class TetrominoType {
-        LINE          = 0,
-        L             = 1,
-        REVERSE_L     = 2,
-        STAIR         = 3,
+        LINE = 0,
+        L = 1,
+        REVERSE_L = 2,
+        STAIR = 3,
         REVERSE_STAIR = 4,
-        BLOCK         = 5,
+        BLOCK = 5,
     };
 
     enum class TetrominoState {
-        MOVING        = 0,
-        LANDED        = 1,
+        MOVING = 0,
+        LANDED = 1,
+    };
+
+    struct CompareIvec2 {
+        const bool operator()(const glm::ivec2 &a, const glm::ivec2 &b) const;
     };
 }
 
@@ -36,6 +40,7 @@ class Game;
 class Tetromino {
 public:
     Tetromino(TetrominoUtil::TetrominoType type, Game& game);
+    Tetromino& operator=(const Tetromino& rhs);
 
     // Translation functions
     void translate_left();
@@ -53,6 +58,7 @@ public:
 
     int highest_block() const; // Returns y coord of highest block in tetromino
 private:
+    int rotation_state;
 
     Game& bound_game; // The game which the Tetromino is a part of
 
@@ -63,12 +69,10 @@ private:
 
     glm::ivec2 top_left_point; // Point at the very top left of the
                                // imaginary 4x4 relative space tetrominos reside in
-    std::set<glm::ivec2> blocks;
+    std::set<glm::ivec2, TetrominoUtil::CompareIvec2> blocks;
 
     TetrominoUtil::TetrominoType tetromino_type;
     TetrominoUtil::TetrominoState tetromino_state;
-    int rotation_state;
 };
-
 
 #endif //INC_3D_TETRIS_TETROMINO_H

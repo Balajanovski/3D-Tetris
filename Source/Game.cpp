@@ -4,12 +4,11 @@
 
 #include "Game.h"
 
-#include "Util/RandomNumberGen.cpp"
-
 Game::Game() :
-        current_tetromino(static_cast<TetrominoUtil::TetrominoType>(RandomNumberGen::rng(0, 5)), *this)
+        // Initialise current tetromino for it has no default constructor
+        current_tetromino(static_cast<TetrominoUtil::TetrominoType>(0), *this)
 {
-
+    current_tetromino = Tetromino(static_cast<TetrominoUtil::TetrominoType>(rng_component.rng(0, 5)), *this);
 }
 
 void Game::tick() {
@@ -18,7 +17,7 @@ void Game::tick() {
 }
 
 void Game::add_landed(const Tetromino& t) {
-    landed.insert(t);
+    landed.push_back(t);
 
     if (t.highest_block() <= 1) {
         game_over = true;
