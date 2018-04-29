@@ -22,15 +22,16 @@ public:
     void tick();
     void add_landed(const Tetromino& t);
     bool check_collision(const Tetromino& new_pos) const;
+
+    RandomNumberComponent rng_component;
 private:
+    ViewComponent view_component;
+    InputQueue    input_queue;
+
     Tetromino current_tetromino;
     std::vector<Tetromino> landed;
 
     bool game_over = false;
-
-    //InputQueue    input_queue;
-    //ViewComponent view_component;
-    RandomNumberComponent rng_component;
 };
 
 

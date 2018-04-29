@@ -12,6 +12,7 @@
 #include <glm/vec2.hpp>
 #include <set>
 #include <vector>
+#include <cstdint>
 
 namespace TetrominoUtil {
     static constexpr int BLOCKS_IN_TETROMINO = 4;
@@ -39,7 +40,7 @@ class Game;
 
 class Tetromino {
 public:
-    Tetromino(TetrominoUtil::TetrominoType type, Game& game);
+    Tetromino(TetrominoUtil::TetrominoType type, Game* game);
     Tetromino& operator=(const Tetromino& rhs);
 
     // Translation functions
@@ -57,15 +58,25 @@ public:
     bool tetromino_overlaps(const Tetromino& t) const; // Check if other tetromino overlaps this tetromino
 
     int highest_block() const; // Returns y coord of highest block in tetromino
+
+    // Getters
+    uint32_t get_color() const { return color; }
+    const std::set<glm::ivec2, TetrominoUtil::CompareIvec2>& get_blocks() const { return blocks; }
 private:
     int rotation_state;
 
-    Game& bound_game; // The game which the Tetromino is a part of
+    Game* bound_game; // The game which the Tetromino is a part of
 
-    void land_block();
+    void land_tetromino();
 
+    /*
+     * Precomputed table of tetromino rotations
+     * Coordinates relative to tetromino itself
+     */
     const static std::unordered_map<TetrominoUtil::TetrominoType,
             std::array< std::array<glm::ivec2, TetrominoUtil::BLOCKS_IN_TETROMINO>, 4>, EnumClassHash> tetromino_rotations;
+
+    const static uint32_t possible_colors[5];
 
     glm::ivec2 top_left_point; // Point at the very top left of the
                                // imaginary 4x4 relative space tetrominos reside in
@@ -73,6 +84,8 @@ private:
 
     TetrominoUtil::TetrominoType tetromino_type;
     TetrominoUtil::TetrominoState tetromino_state;
+
+    uint32_t color;
 };
 
 #endif //INC_3D_TETRIS_TETROMINO_H

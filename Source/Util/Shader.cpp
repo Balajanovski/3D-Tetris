@@ -126,6 +126,11 @@ void Shader::set_int(const std::string &name, int value) const {
     assert(glGetError() == GL_NO_ERROR);
 }
 
+void Shader::set_unsigned_int(const std::string &name, unsigned int value) const {
+    glUniform1ui(glGetUniformLocation(m_ID, name.c_str()), value);
+    assert(glGetError() == GL_NO_ERROR);
+}
+
 void Shader::set_float(const std::string &name, float value) const {
     glUniform1f(glGetUniformLocation(m_ID, name.c_str()), value);
     assert(glGetError() == GL_NO_ERROR);

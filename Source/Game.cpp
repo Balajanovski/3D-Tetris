@@ -6,9 +6,12 @@
 
 Game::Game() :
         // Initialise current tetromino for it has no default constructor
-        current_tetromino(static_cast<TetrominoUtil::TetrominoType>(0), *this)
+        view_component("vertex.vert", "fragment.frag"),
+        input_queue(view_component.get_window()),
+        current_tetromino(static_cast<TetrominoUtil::TetrominoType>(rng_component.rng(0, 5)), this)
+
 {
-    current_tetromino = Tetromino(static_cast<TetrominoUtil::TetrominoType>(rng_component.rng(0, 5)), *this);
+    current_tetromino = Tetromino(static_cast<TetrominoUtil::TetrominoType>(rng_component.rng(0, 5)), this);
 }
 
 void Game::tick() {

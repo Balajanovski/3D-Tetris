@@ -12,7 +12,7 @@
 using namespace glm;
 
 /*
- * Precomputed tables of tetromino rotations
+ * Precomputed table of tetromino rotations
  * Coordinates relative to tetromino itself
  */
 
@@ -77,11 +77,20 @@ const std::unordered_map<TetrominoUtil::TetrominoType,
         },
 };
 
-Tetromino::Tetromino(TetrominoUtil::TetrominoType type, Game& game)
+const uint32_t Tetromino::possible_colors[5] = {
+    0xFF0000, // Red
+    0x00FF00, // Green
+    0x0000FF, // Blue
+    0x00FFFF, // Cyan
+    0xFFDB58, // Mustard
+};
+
+Tetromino::Tetromino(TetrominoUtil::TetrominoType type, Game* game)
         : tetromino_type(type),
           tetromino_state(TetrominoUtil::TetrominoState::MOVING),
           rotation_state(0),
-          bound_game(game)
+          bound_game(game),
+          color(possible_colors[game->rng_component.rng(0, 4)])
 {
     std::array<ivec2, TetrominoUtil::BLOCKS_IN_TETROMINO> relative_coords =
             tetromino_rotations.find(type)->second[rotation_state];
@@ -132,7 +141,7 @@ void Tetromino::translate_left() {
         b.x -= 1;
     }
 
-    if (!bound_game.check_collision(*this)) {
+    if (!bound_game->check_collision(*this)) {
         top_left_point.x -= 1;      // Translate the top left point
                                     // because it is ok to translate
     } else {
@@ -159,7 +168,7 @@ void Tetromino::translate_right() {
     for (auto b: blocks) {
         b.x += 1;
     }
-    if (!bound_game.check_collision(*this)) {
+    if (!bound_game->check_collision(*this)) {
         top_left_point.x += 1;      // Translate the top left point
                                     // because it is ok to translate
     } else {
@@ -183,12 +192,12 @@ void Tetromino::translate_down() {
         b.y += 1;
     }
 
-    if (!bound_game.check_collision(*this)) {
+    if (!bound_game->check_collision(*this)) {
         top_left_point.y += 1;      // Translate the top left point
                                     // because it is ok to translate
     } else {
         blocks = old_blocks;        // Revert the translation
-        land_block();               // Set the block as landed
+        land_tetromino();               // Set the block as landed
     }
 }
 
@@ -216,7 +225,7 @@ void Tetromino::rotate_left() {
         blocks.insert(relative_coords[i]);
     }
 
-    if (!bound_game.check_collision(*this)) {
+    if (!bound_game->check_collision(*this)) {
         // Wall kick
         for (int i = 0; i < TetrominoUtil::BLOCKS_IN_TETROMINO; ++i) {
             if (relative_coords[i].x < 0) {
@@ -254,7 +263,7 @@ void Tetromino::rotate_right() {
         blocks.insert(relative_coords[i]);
     }
 
-    if (!bound_game.check_collision(*this)) {
+    if (!bound_game->check_collision(*this)) {
         // Wall kick
         for (int i = 0; i < TetrominoUtil::BLOCKS_IN_TETROMINO; ++i) {
             if (relative_coords[i].x < 0) {
@@ -280,10 +289,10 @@ void Tetromino::remove_blocks(const std::vector<glm::ivec2>& blocks_to_remove) {
     translate_down();
 }
 
-void Tetromino::land_block() {
+void Tetromino::land_tetromino() {
     tetromino_state = TetrominoUtil::TetrominoState::LANDED;
 
-    bound_game.add_landed(*this);
+    bound_game->add_landed(*this);
 }
 
 bool Tetromino::is_block_part(const glm::ivec2 &block) const {

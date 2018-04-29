@@ -5,6 +5,7 @@
 #ifndef INC_3D_TETRIS_INPUTQUEUE_H
 #define INC_3D_TETRIS_INPUTQUEUE_H
 
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <deque>
 #include <memory>
@@ -15,14 +16,14 @@ public:
     // Set callback as friend
     friend void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
-    explicit InputQueue(std::shared_ptr<GLFWwindow>&& win);
+    explicit InputQueue(GLFWwindow* win);
 
     GLFWkey fetch();
 private:
     static constexpr int MAX_ELEMENTS_IN_QUEUE = 30;
 
     std::deque<GLFWkey> queue;
-    std::shared_ptr<GLFWwindow> window;
+    GLFWwindow* window;
 };
 
 

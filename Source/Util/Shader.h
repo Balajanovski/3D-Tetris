@@ -27,7 +27,7 @@ public:
     Shader& operator= (Shader&& rhs);
 
     // constructor reads and builds the shader
-    Shader(const GLchar* vertex_path, const GLchar* fragment_path);
+    Shader(const char* vertex_path, const char* fragment_path);
 
     // use/activate the shader
     void use();
@@ -35,6 +35,7 @@ public:
     // utility uniform functions
     void set_bool(const std::string &name, bool value) const;
     void set_int(const std::string &name, int value) const;
+    void set_unsigned_int(const std::string &name, unsigned int value) const;
     void set_float(const std::string &name, float value) const;
 
 };

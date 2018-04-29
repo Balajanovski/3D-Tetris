@@ -14,17 +14,17 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     input_queue->queue.push_front(key);
 }
 
-InputQueue::InputQueue(std::shared_ptr<GLFWwindow>&& win)
+InputQueue::InputQueue(GLFWwindow* win)
         : queue(MAX_ELEMENTS_IN_QUEUE), window(win)
 {
     // Use user pointer to allow access to class within callback
-    glfwSetWindowUserPointer(window.get(), this);
+    glfwSetWindowUserPointer(window, this);
 
     // Set callback
-    glfwSetKeyCallback(window.get(), key_callback);
+    glfwSetKeyCallback(window, key_callback);
 
     // Reset user pointer so no dangling pointers are accessed
-    glfwSetWindowUserPointer(window.get(), window.get());
+    glfwSetWindowUserPointer(window, window);
 }
 
 InputQueue::GLFWkey InputQueue::fetch() {
