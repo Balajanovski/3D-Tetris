@@ -2,11 +2,13 @@
 
 uniform uint color;
 
+out vec4 out_color;
+
 void main() {
     vec3 processed_color;
-    processed_color.r = 255 / ((color >> 16) & 0xFFu);
-    processed_color.g = 255 / ((color >> 8)  & 0xFFu);
-    processed_color.b = 255 / (color         & 0xFFu);
+    processed_color.r = 255.0 / float((color >> 16) & 0xFFu);
+    processed_color.g = 255.0 / float((color >> 8)  & 0xFFu);
+    processed_color.b = 255.0 / float(color         & 0xFFu);
 
-	gl_FragColor = vec4(processed_color, 1.0);
+	out_color = vec4(processed_color, 1.0);
 }

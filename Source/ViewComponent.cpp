@@ -7,11 +7,20 @@
 #include "Tetromino.h"
 
 #include <cassert>
+#ifndef NDEBUG
+#include <iostream>
+#endif
 
 inline void init_glfw();
 inline void init_glad();
+#ifndef NDEBUG
+static void glfw_error(int id, const char* description);
+#endif
 
-ViewComponent::ViewComponent(const std::string &vert_shader_src, const std::string &frag_shader_src) {
+ViewComponent::ViewComponent(const std::string& vert_shader_src, const std::string& frag_shader_src) {
+#ifndef NDEBUG
+    glfwSetErrorCallback(&glfw_error);
+#endif
     init_glfw();
 
     // Create the window
@@ -24,14 +33,26 @@ ViewComponent::ViewComponent(const std::string &vert_shader_src, const std::stri
 
     init_glad();
 
+    glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    glfwSetFramebufferSizeCallback(window,
+                                   [](GLFWwindow* window, int width, int height) {
+                                       glViewport(0, 0, width, height);
+                                   }
+    );
+
+    // Clear GL color buffer
+    glClearColor(0, 0, 0, 1.0f);
+    assert(glGetError() == GL_NO_ERROR);
+
+    glClear(GL_COLOR_BUFFER_BIT);
+    assert(glGetError() == GL_NO_ERROR);
+
     // Create shader
     shader_prog.reset(new Shader(vert_shader_src.c_str(), frag_shader_src.c_str()));
-    shader_prog->use();
 
-    // Supply constants to shader
-    shader_prog->set_unsigned_int("GAME_WIDTH", GAME_WIDTH);
-    shader_prog->set_unsigned_int("GAME_HEIGHT", GAME_HEIGHT);
-    shader_prog->set_unsigned_int("BLOCK_SIZE", BLOCK_SIZE);
+    // Generate vertex array object
+    glGenVertexArrays(1, &vao);
+    assert(glGetError() == GL_NO_ERROR);
 
     // Generate vertex buffer object
     glGenBuffers(1, &vbo);
@@ -41,9 +62,7 @@ ViewComponent::ViewComponent(const std::string &vert_shader_src, const std::stri
     glGenBuffers(1, &ebo);
     assert(glGetError() == GL_NO_ERROR);
 
-    // Generate vertex array object
-    glGenVertexArrays(1, &vao);
-    assert(glGetError() == GL_NO_ERROR);
+    // Bind vao to store bindbuffer calls
     glBindVertexArray(vao);
     assert(glGetError() == GL_NO_ERROR);
 
@@ -53,6 +72,12 @@ ViewComponent::ViewComponent(const std::string &vert_shader_src, const std::stri
 
     // Bind ebo (element buffer object)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    assert(glGetError() == GL_NO_ERROR);
+
+    // Set vertex attributes
+    glVertexAttribPointer(0, 2, GL_INT, GL_FALSE, 2 * sizeof(int), (void*)0);
+    assert(glGetError() == GL_NO_ERROR);
+    glEnableVertexAttribArray(0);
     assert(glGetError() == GL_NO_ERROR);
 
     // Unbind vao (vertex array object)
@@ -76,7 +101,14 @@ void ViewComponent::draw_tetromino(const Tetromino &tetromino) {
     }
 }
 
+void ViewComponent::swap_buffers() {
+    glfwSwapBuffers(window);
+}
+
 void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color) {
+    glClear(GL_COLOR_BUFFER_BIT);
+    assert(glGetError() == GL_NO_ERROR);
+
     int vertices[] = {
             block.x, block.y,      // Top-left
             block.x+1, block.y,    // Top-right
@@ -89,9 +121,16 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color) {
             3, 2, 0
     };
 
+    shader_prog->use();
+
     // If it is the first iteration, glBufferData must be used to generate the buffers
     // Otherwise, use glBufferSubData to avoid reallocating the buffer every tick
     if (first_iteration) {
+        // Supply constants to shader
+        shader_prog->set_int("GAME_WIDTH", GAME_WIDTH);
+        shader_prog->set_int("GAME_HEIGHT", GAME_HEIGHT);
+        shader_prog->set_int("BLOCK_SIZE", BLOCK_SIZE);
+
         // Buffer data into vbo
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         assert(glGetError() == GL_NO_ERROR);
@@ -114,7 +153,6 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color) {
     }
 
     shader_prog->set_unsigned_int("color", color);
-    shader_prog->use();
 
     // Draw block
     glBindVertexArray(vao);
@@ -146,3 +184,9 @@ inline void init_glad() {
         throw std::runtime_error("Failed to initialize GLAD");
     }
 }
+
+#ifndef NDEBUG
+static void glfw_error(int id, const char* description) {
+    std::cerr << description << "\n";
+}
+#endif

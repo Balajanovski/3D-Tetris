@@ -4,7 +4,13 @@
 
 #include "InputQueue.h"
 
+#include <algorithm>
+
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (key == 0) {
+        return;
+    }
+
     auto input_queue = static_cast<InputQueue*>(glfwGetWindowUserPointer(window));
 
     if (input_queue->queue.size() >= InputQueue::MAX_ELEMENTS_IN_QUEUE - 1) {
@@ -14,9 +20,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     input_queue->queue.push_front(key);
 }
 
-InputQueue::InputQueue(GLFWwindow* win)
-        : queue(MAX_ELEMENTS_IN_QUEUE), window(win)
-{
+InputQueue::InputQueue(GLFWwindow* win) : window(win) {
     // Use user pointer to allow access to class within callback
     glfwSetWindowUserPointer(window, this);
 
@@ -24,7 +28,7 @@ InputQueue::InputQueue(GLFWwindow* win)
     glfwSetKeyCallback(window, key_callback);
 
     // Reset user pointer so no dangling pointers are accessed
-    glfwSetWindowUserPointer(window, window);
+    //glfwSetWindowUserPointer(window, window);
 }
 
 InputQueue::GLFWkey InputQueue::fetch() {

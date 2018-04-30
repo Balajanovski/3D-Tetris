@@ -14,6 +14,6 @@ void RandomNumberComponent::seed(int s) {
     gen.seed(s);
 }
 
-int RandomNumberComponent::rng(int upper_bound, int lower_bound) {
-    return std::uniform_int_distribution<std::mt19937::result_type>(lower_bound, upper_bound)(gen);
+int RandomNumberComponent::rng(int lower_bound, int upper_bound) {
+    return std::uniform_int_distribution<>(lower_bound, upper_bound)(gen);
 }

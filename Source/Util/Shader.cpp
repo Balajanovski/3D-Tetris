@@ -97,7 +97,7 @@ Shader::Shader(const char *vertex_path, const char *fragment_path) : m_reference
     m_ID = glCreateProgram();
     glAttachShader(m_ID, vertex);
     glAttachShader(m_ID, fragment);
-    glBindFragDataLocation(m_ID, 0, "outColor");
+    glBindFragDataLocation(m_ID, 0, "out_color");
     glLinkProgram(m_ID);
 // print linking errors if any
     glGetProgramiv(m_ID, GL_LINK_STATUS, &success);

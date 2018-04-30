@@ -14,7 +14,7 @@ public:
     void seed();
     void seed(int s);
 
-    int rng (int upper_bound, int lower_bound);
+    int rng (int lower_bound, int upper_bound);
 private:
     std::mt19937 gen;
 };

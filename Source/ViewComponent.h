@@ -7,6 +7,7 @@
 
 #include "Util/Shader.h"
 
+#include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <memory>
@@ -21,6 +22,7 @@ public:
     ~ViewComponent();
 
     void draw_tetromino(const Tetromino& tetromino);
+    void swap_buffers();
 
     // Getters
     GLFWwindow* get_window() { return window; }

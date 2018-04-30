@@ -197,7 +197,7 @@ void Tetromino::translate_down() {
                                     // because it is ok to translate
     } else {
         blocks = old_blocks;        // Revert the translation
-        land_tetromino();               // Set the block as landed
+        land_tetromino();           // Set the block as landed
     }
 }
 

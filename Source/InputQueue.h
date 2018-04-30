@@ -20,7 +20,7 @@ public:
 
     GLFWkey fetch();
 private:
-    static constexpr int MAX_ELEMENTS_IN_QUEUE = 30;
+    static constexpr int MAX_ELEMENTS_IN_QUEUE = 10;
 
     std::deque<GLFWkey> queue;
     GLFWwindow* window;

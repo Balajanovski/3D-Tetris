@@ -19,12 +19,16 @@ class Game {
 public:
     Game();
 
-    void tick();
+    void begin();
     void add_landed(const Tetromino& t);
     bool check_collision(const Tetromino& new_pos) const;
 
     RandomNumberComponent rng_component;
 private:
+    static constexpr double MS_PER_UPDATE = 3;
+
+    void tick();
+
     ViewComponent view_component;
     InputQueue    input_queue;
 

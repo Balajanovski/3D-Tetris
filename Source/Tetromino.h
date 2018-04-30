@@ -62,6 +62,9 @@ public:
     // Getters
     uint32_t get_color() const { return color; }
     const std::set<glm::ivec2, TetrominoUtil::CompareIvec2>& get_blocks() const { return blocks; }
+    TetrominoUtil::TetrominoState get_state() const { return tetromino_state; }
+    TetrominoUtil::TetrominoType get_type() const { return tetromino_type; }
+    const glm::ivec2& get_top_left_point() const { return top_left_point; }
 private:
     int rotation_state;
 
