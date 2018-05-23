@@ -62,20 +62,15 @@ ViewComponent::ViewComponent(const std::string& vert_shader_src, const std::stri
     glGenBuffers(1, &ebo);
     assert(glGetError() == GL_NO_ERROR);
 
-    // Bind vao to store bindbuffer calls
+    // Bind vao to store VertexAttribPointer call
     glBindVertexArray(vao);
     assert(glGetError() == GL_NO_ERROR);
 
-    // Bind vbo (vertex buffer object)
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     assert(glGetError() == GL_NO_ERROR);
 
-    // Bind ebo (element buffer object)
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    assert(glGetError() == GL_NO_ERROR);
-
     // Set vertex attributes
-    glVertexAttribPointer(0, 2, GL_INT, GL_FALSE, 2 * sizeof(int), (void*)0);
+    glVertexAttribPointer(0, 2, GL_INT, GL_FALSE, 0, (void*)0);
     assert(glGetError() == GL_NO_ERROR);
     glEnableVertexAttribArray(0);
     assert(glGetError() == GL_NO_ERROR);
@@ -86,7 +81,7 @@ ViewComponent::ViewComponent(const std::string& vert_shader_src, const std::stri
 
     // Unbind buffers
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 ViewComponent::~ViewComponent() {
@@ -105,10 +100,11 @@ void ViewComponent::swap_buffers() {
     glfwSwapBuffers(window);
 }
 
-void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color) {
+void ViewComponent::clear_screen() {
     glClear(GL_COLOR_BUFFER_BIT);
-    assert(glGetError() == GL_NO_ERROR);
+}
 
+void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color) {
     int vertices[] = {
             block.x, block.y,      // Top-left
             block.x+1, block.y,    // Top-right
@@ -127,9 +123,11 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color) {
     // Otherwise, use glBufferSubData to avoid reallocating the buffer every tick
     if (first_iteration) {
         // Supply constants to shader
-        shader_prog->set_int("GAME_WIDTH", GAME_WIDTH);
-        shader_prog->set_int("GAME_HEIGHT", GAME_HEIGHT);
+        shader_prog->set_int("SCREEN_WIDTH", SCREEN_WIDTH);
+        shader_prog->set_int("SCREEN_HEIGHT", SCREEN_HEIGHT);
         shader_prog->set_int("BLOCK_SIZE", BLOCK_SIZE);
+
+        glBindVertexArray(vao);
 
         // Buffer data into vbo
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -142,7 +140,11 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color) {
         assert(glGetError() == GL_NO_ERROR);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
         assert(glGetError() == GL_NO_ERROR);
+
+        glBindVertexArray(0);
     } else {
+        glBindVertexArray(vao);
+
         // Reset vbo
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         assert(glGetError() == GL_NO_ERROR);
@@ -150,6 +152,8 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color) {
         assert(glGetError() == GL_NO_ERROR);
 
         // Ebo is not reset since it is unchanging
+
+        glBindVertexArray(0);
     }
 
     shader_prog->set_unsigned_int("color", color);
@@ -157,7 +161,7 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color) {
     // Draw block
     glBindVertexArray(vao);
     assert(glGetError() == GL_NO_ERROR);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
     assert(glGetError() == GL_NO_ERROR);
     glBindVertexArray(0);
     assert(glGetError() == GL_NO_ERROR);
@@ -165,6 +169,7 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color) {
     // Since it is no longer the first iteration
     if (first_iteration) {
         first_iteration = false;
+        //exit(1);
     }
 }
 

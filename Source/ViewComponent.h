@@ -23,6 +23,7 @@ public:
 
     void draw_tetromino(const Tetromino& tetromino);
     void swap_buffers();
+    void clear_screen();
 
     // Getters
     GLFWwindow* get_window() { return window; }

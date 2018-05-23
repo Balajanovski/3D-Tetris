@@ -38,6 +38,7 @@ void Game::begin() {
         }
 
         // Drawing code
+        view_component.clear_screen();
         if (current_tetromino.get_state() != TetrominoUtil::TetrominoState::LANDED) {
             view_component.draw_tetromino(current_tetromino);
         }
