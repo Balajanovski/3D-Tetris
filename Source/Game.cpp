@@ -16,6 +16,7 @@ Game::Game() :
 
 {
     current_tetromino = Tetromino(static_cast<TetrominoUtil::TetrominoType>(rng_component.rng(0, 5)), this);
+    previous_tetromino_move_time = glfwGetTime();
 }
 
 void Game::begin() {
@@ -124,7 +125,12 @@ void Game::tick() {
         }
     }
 
-    current_tetromino.translate_down();
+    // Move down current tetromino if time passed
+    if ((glfwGetTime() - previous_tetromino_move_time) >= TIME_BETWEEN_TETROMINO_MOVEMENTS) {
+        current_tetromino.translate_down();
+        previous_tetromino_move_time = glfwGetTime();
+    }
+
 }
 
 void Game::add_landed(const Tetromino& t) {

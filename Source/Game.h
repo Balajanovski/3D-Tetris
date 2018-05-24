@@ -36,6 +36,9 @@ private:
     std::vector<Tetromino> landed;
 
     bool game_over = false;
+
+    // Last time the current tetromino moved down
+    double previous_tetromino_move_time;
 };
 
 

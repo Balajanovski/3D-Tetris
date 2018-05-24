@@ -14,4 +14,7 @@ static constexpr unsigned int SCREEN_HEIGHT = GAME_HEIGHT * BLOCK_SIZE;
 
 static constexpr unsigned int FPS = 60;
 
+// Seconds till the current tetromino moves down
+static constexpr double TIME_BETWEEN_TETROMINO_MOVEMENTS = 0.5;
+
 #endif //INC_3D_TETRIS_CONSTANTS_H

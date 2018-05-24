@@ -9,10 +9,10 @@
 
 #include <unordered_map>
 #include <array>
-#include <glm/vec2.hpp>
 #include <set>
 #include <vector>
 #include <cstdint>
+#include <glm/vec2.hpp>
 
 namespace TetrominoUtil {
     static constexpr int BLOCKS_IN_TETROMINO = 4;
@@ -34,6 +34,8 @@ namespace TetrominoUtil {
     struct CompareIvec2 {
         const bool operator()(const glm::ivec2 &a, const glm::ivec2 &b) const;
     };
+
+
 }
 
 class Game;

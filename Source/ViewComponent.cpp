@@ -101,6 +101,7 @@ void ViewComponent::swap_buffers() {
 }
 
 void ViewComponent::clear_screen() {
+    glClearColor(0, 0, 0, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
@@ -169,7 +170,6 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color) {
     // Since it is no longer the first iteration
     if (first_iteration) {
         first_iteration = false;
-        //exit(1);
     }
 }
 

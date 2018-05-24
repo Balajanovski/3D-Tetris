@@ -137,8 +137,9 @@ void Tetromino::translate_left() {
     std::set<glm::ivec2, TetrominoUtil::CompareIvec2> old_blocks = blocks; // Store blocks before translation
 
     // Translate block
-    for (auto b: blocks) {
-        b.x -= 1;
+    blocks.clear();
+    for (auto old_iter = old_blocks.begin(); old_iter != old_blocks.end(); ++old_iter) {
+        blocks.insert(ivec2{old_iter->x - 1, old_iter->y});
     }
 
     if (!bound_game->check_collision(*this)) {
@@ -165,9 +166,11 @@ void Tetromino::translate_right() {
     std::set<glm::ivec2, TetrominoUtil::CompareIvec2> old_blocks = blocks; // Store blocks before translation
 
     // Translate block
-    for (auto b: blocks) {
-        b.x += 1;
+    blocks.clear();
+    for (auto old_iter = old_blocks.begin(); old_iter != old_blocks.end(); ++old_iter) {
+        blocks.insert(ivec2{old_iter->x + 1, old_iter->y});
     }
+
     if (!bound_game->check_collision(*this)) {
         top_left_point.x += 1;      // Translate the top left point
                                     // because it is ok to translate
@@ -188,8 +191,9 @@ void Tetromino::translate_down() {
     std::set<glm::ivec2, TetrominoUtil::CompareIvec2> old_blocks = blocks; // Store blocks before translation
 
     // Translate block
-    for (auto b: blocks) {
-        b.y += 1;
+    blocks.clear();
+    for (auto old_iter = old_blocks.begin(); old_iter != old_blocks.end(); ++old_iter) {
+        blocks.insert(ivec2{old_iter->x, old_iter->y + 1});
     }
 
     if (!bound_game->check_collision(*this)) {
@@ -221,6 +225,7 @@ void Tetromino::rotate_left() {
     std::set<glm::ivec2, TetrominoUtil::CompareIvec2> old_blocks = blocks;
 
     // Copy relative coords into blocks vector
+    blocks.clear();
     for (int i = 0; i < TetrominoUtil::BLOCKS_IN_TETROMINO; ++i) {
         blocks.insert(relative_coords[i]);
     }
@@ -259,16 +264,17 @@ void Tetromino::rotate_right() {
     std::set<glm::ivec2, TetrominoUtil::CompareIvec2> old_blocks = blocks;
 
     // Copy relative coords into blocks vector
+    blocks.clear();
     for (int i = 0; i < TetrominoUtil::BLOCKS_IN_TETROMINO; ++i) {
         blocks.insert(relative_coords[i]);
     }
 
     if (!bound_game->check_collision(*this)) {
         // Wall kick
-        for (int i = 0; i < TetrominoUtil::BLOCKS_IN_TETROMINO; ++i) {
-            if (relative_coords[i].x < 0) {
+        for (auto& b : blocks) {
+            if (b.x < 0) {
                 translate_right();
-            } else if (relative_coords[i].x > GAME_WIDTH - 1) {
+            } if (b.x > GAME_WIDTH - 1) {
                 translate_left();
             }
         }
