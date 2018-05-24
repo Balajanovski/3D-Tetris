@@ -19,25 +19,32 @@ Game::Game() :
 }
 
 void Game::begin() {
-    // Game loop
-    double previous_time = glfwGetTime();
-    double lag           = 0;
-    while (!game_over) {
-        double current_time = glfwGetTime();
-        double elapsed = current_time - previous_time;
-        previous_time = current_time;
-        lag += elapsed;
+    static double limit_FPS = 1.0 / FPS;
 
+    // Game loop
+    double previous_time = glfwGetTime(), timer = previous_time;
+    double delta_time = 0, now_time = 0;
+    int frames       = 0, updates = 0;
+    while (!game_over) {
+        // Handle delta time
+        now_time = glfwGetTime();
+        delta_time += (now_time - previous_time) / limit_FPS;
+        previous_time = now_time;
+
+        // Poll events for controls
         glfwPollEvents();
 
-        while (lag >= MS_PER_UPDATE) {
+        // Update game at FPS
+        while (delta_time >= 1.0) {
             if (!game_over) {
                 tick();
             }
-            lag -= MS_PER_UPDATE;
+
+            ++updates;
+            --delta_time;
         }
 
-        // Drawing code
+        // Render code code
         view_component.clear_screen();
         if (current_tetromino.get_state() != TetrominoUtil::TetrominoState::LANDED) {
             view_component.draw_tetromino(current_tetromino);
@@ -46,6 +53,7 @@ void Game::begin() {
         for (auto& t : landed) {
             view_component.draw_tetromino(t);
         }
+        ++frames;
 
         view_component.swap_buffers();
     }
@@ -102,6 +110,11 @@ void Game::tick() {
             break;
         default:
             break;
+    }
+
+    if (view_component.should_window_close()) {
+        game_over = true;
+        return; // Exit function, because quit command was invoked
     }
 
     // Handle game over

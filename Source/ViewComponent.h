@@ -27,6 +27,7 @@ public:
 
     // Getters
     GLFWwindow* get_window() { return window; }
+    bool should_window_close() { return glfwWindowShouldClose(window); }
 private:
     std::unique_ptr<Shader> shader_prog;
     GLFWwindow* window;

@@ -11,13 +11,15 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         return;
     }
 
-    auto input_queue = static_cast<InputQueue*>(glfwGetWindowUserPointer(window));
+    if (action == GLFW_PRESS) {
+        auto input_queue = static_cast<InputQueue*>(glfwGetWindowUserPointer(window));
 
-    if (input_queue->queue.size() >= InputQueue::MAX_ELEMENTS_IN_QUEUE - 1) {
-        input_queue->queue.pop_back();
+        if (input_queue->queue.size() >= InputQueue::MAX_ELEMENTS_IN_QUEUE - 1) {
+            input_queue->queue.pop_back();
+        }
+
+        input_queue->queue.push_front(key);
     }
-
-    input_queue->queue.push_front(key);
 }
 
 InputQueue::InputQueue(GLFWwindow* win) : window(win) {
