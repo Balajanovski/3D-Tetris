@@ -17,6 +17,7 @@
 
 namespace TetrominoUtil {
     static constexpr int BLOCKS_IN_TETROMINO = 4;
+    static constexpr size_t NUM_POSSIBLE_COLOURS = 7;
 
     enum class TetrominoType {
         LINE = 0,
@@ -83,7 +84,7 @@ private:
     const static std::unordered_map<TetrominoUtil::TetrominoType,
             std::array< std::array<glm::ivec2, TetrominoUtil::BLOCKS_IN_TETROMINO>, 4>, EnumClassHash> tetromino_rotations;
 
-    const static uint32_t possible_colors[7];
+    const static uint32_t possible_colors[TetrominoUtil::NUM_POSSIBLE_COLOURS];
 
     glm::ivec2 top_left_point; // Point at the very top left of the
                                // imaginary 4x4 relative space tetrominos reside in

@@ -77,22 +77,35 @@ const std::unordered_map<TetrominoUtil::TetrominoType,
         },
 };
 
-const uint32_t Tetromino::possible_colors[7] = {
-    0xFF0000, // Red
-    0x00FF00, // Green
-    0x0000FF, // Blue
-    0x00FFFF, // Cyan
-    0xFFDB58, // Mustard
-    0xEE82EE, // Violet
-    0xFFFFFF, // White
+const uint32_t Tetromino::possible_colors[TetrominoUtil::NUM_POSSIBLE_COLOURS] = {
+        0xFF0000, // Red
+        0x00FF00, // Green
+        0x0000FF, // Blue
+        0x00FFFF, // Cyan
+        0xFFDB58, // Mustard
+        0xEE82EE, // Violet
+        0xFFFFFF, // White
 };
+
+// Lower bound is always zero
+int rotate_colors(int upper_bound) {
+    static int counter;
+    int previous_counter = counter;
+
+    ++counter;
+    if (counter > upper_bound) {
+        counter = 0;
+    }
+
+    return previous_counter;
+}
 
 Tetromino::Tetromino(TetrominoUtil::TetrominoType type, Game* game)
         : tetromino_type(type),
           tetromino_state(TetrominoUtil::TetrominoState::MOVING),
           rotation_state(0),
           bound_game(game),
-          color(possible_colors[game->rng_component.rng(0, 6)])
+          color(possible_colors[rotate_colors(TetrominoUtil::NUM_POSSIBLE_COLOURS - 1)])
 {
 
     std::array<ivec2, TetrominoUtil::BLOCKS_IN_TETROMINO> relative_coords =
