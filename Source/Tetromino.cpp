@@ -79,6 +79,15 @@ const std::unordered_map<TetrominoUtil::TetrominoType,
                         std::array<ivec2, 4>{{ivec2{1, 1}, ivec2{2, 1}, ivec2{1, 2}, ivec2{2, 2}}},
                 }}
         },
+        {TetrominoUtil::TetrominoType::T,
+                std::array< std::array<ivec2, 4>, 4>  {{
+                        std::array<ivec2, 4>{{ivec2{0, 0}, ivec2{1, 0}, ivec2{2, 0}, ivec2{1, 1}}},
+                        std::array<ivec2, 4>{{ivec2{1, 0}, ivec2{1, 1}, ivec2{0, 1}, ivec2{1, 2}}},
+                        std::array<ivec2, 4>{{ivec2{0, 1}, ivec2{1, 1}, ivec2{2, 1}, ivec2{1, 0}}},
+                        std::array<ivec2, 4>{{ivec2{0, 0}, ivec2{0, 1}, ivec2{0, 2}, ivec2{1, 1}}},
+
+                }}
+        },
 };
 
 const uint32_t Tetromino::possible_colors[TetrominoUtil::NUM_POSSIBLE_COLOURS] = {
@@ -236,16 +245,17 @@ void Tetromino::translate_down() {
     }
 }
 
-void Tetromino::force_translate_down() {
+void Tetromino::translate_block_down(const glm::ivec2 &block) {
     std::set<glm::ivec2, TetrominoUtil::CompareIvec2> old_blocks = blocks; // Store blocks before translation
-
-    // Translate tetromino
     blocks.clear();
-    for (auto old_iter = old_blocks.begin(); old_iter != old_blocks.end(); ++old_iter) {
-        blocks.insert(ivec2{old_iter->x, old_iter->y + 1});
-    }
 
-    top_left_point.y += 1;
+    blocks.insert(ivec2{block.x, block.y + 1});
+    for (auto old_iter = old_blocks.begin(); old_iter != old_blocks.end(); ++old_iter) {
+        if (old_iter->x != block.x && old_iter->y != block.y) {
+            blocks.insert(*old_iter);
+        }
+    }
+    printf("");
 }
 
 void Tetromino::jump_down() {
@@ -332,21 +342,18 @@ void Tetromino::rotate_right() {
     }
 }
 
+bool Tetromino::block_exists(const glm::ivec2 &block) {
+    return blocks.find(block) != blocks.end();
+}
+
 void Tetromino::remove_block(const glm::ivec2 &block) {
     if (tetromino_state != TetrominoUtil::TetrominoState::LANDED) {
 #ifndef NDEBUG
         std::cerr << "error: Trying to remove block from tetromino that has not landed yet\n";
 #endif
-        return; // End function if the tetromino has not landed yet
-    }
-
-    printf("%s\n", (blocks.find(block) != blocks.end()) ? "true" : "false");
-    if (blocks.find(block) != blocks.end()) {
-        printf("");
     }
 
     blocks.erase(block);
-    printf("");
 }
 
 void Tetromino::remove_blocks(const std::vector<glm::ivec2>& blocks_to_remove) {
@@ -397,6 +404,5 @@ int Tetromino::highest_block() const {
 }
 
 const bool TetrominoUtil::CompareIvec2::operator()(const glm::ivec2 &a, const glm::ivec2 &b) const {
-    int meme = a.x < b.x || (a.x == b.x && a.y < b.y);
     return a.x < b.x || (a.x == b.x && a.y < b.y);
 }

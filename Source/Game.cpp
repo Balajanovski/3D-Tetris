@@ -4,14 +4,11 @@
 
 #include "Game.h"
 
-#include <algorithm>
 #include <set>
 
 #ifndef NDEBUG
 #include <iostream>
 #endif
-
-const Game::block_tracker Game::EMPTY_BLOCK_TRACKER = {false, nullptr};
 
 Game::Game() :
         view_component("Shaders/vertex.vert", "Shaders/fragment.frag"),
@@ -22,9 +19,6 @@ Game::Game() :
 
 {
     previous_tetromino_move_time = glfwGetTime();
-
-    // Sow block field with null data
-    std::fill_n(&block_field[0][0], GAME_WIDTH * GAME_HEIGHT, EMPTY_BLOCK_TRACKER);
 }
 
 void Game::begin() {
@@ -70,10 +64,8 @@ void Game::begin() {
 
 void Game::tick() {
     if (current_tetromino.get_state() == TetrominoUtil::TetrominoState::LANDED) {
-        handle_row_clearing();
-
         current_tetromino =
-                Tetromino(static_cast<TetrominoUtil::TetrominoType>(rng_component.rng(0, 5)), this);
+                Tetromino(static_cast<TetrominoUtil::TetrominoType>(rng_component.rng(0, 6)), this);
     }
 
     // Handle input
@@ -157,51 +149,67 @@ void Game::handle_row_clearing() {
         }
     }
 
+    int rows_cleared = 0;
     for (int y = GAME_HEIGHT - 1; y >= row_clearing_cap; --y) {
         // Determine if row is full
         bool row_full = true;
         for (int x = 0; x < GAME_WIDTH; ++x) {
-            if (!block_field[y][x].block_filled) {
+            bool found_block = false;
+            for (auto& l : landed) {
+                if (l.block_exists(glm::ivec2{x, y})) {
+                    found_block = true;
+                }
+            }
+            if (!found_block) {
                 row_full = false;
             }
         }
+        printf("\n");
 
         // If row is full proceed to clear
         if (row_full) {
+            ++rows_cleared;
             for (int x = 0; x < GAME_WIDTH; ++x) {
-                block_field[y][x].block_parent->remove_block(glm::ivec2{x, y});
-                block_field[y][x].block_filled = false;
-                block_field[y][x].block_parent = nullptr;
+                for (auto& l : landed) {
+                    l.remove_block(glm::ivec2{x, y});
+                }
             }
+
+            // Get all blocks above deleted row to move down
+            for (auto& l : landed) {
+                auto blocks = l.get_blocks();
+                for (auto& b : blocks) {
+                    if (b.y < y) {
+                        l.translate_block_down(b);
+                    }
+                }
+            }
+
+
         }
     }
 
-
-#ifndef NDEBUG
-    for (int y = 0; y < GAME_HEIGHT; ++y) {
-        for (int x = 0; x < GAME_WIDTH; ++x) {
-            if (block_field[y][x].block_filled) {
-                putchar('#');
-            } else {
-                putchar('-');
-            }
+    // Find and delete all tetrominos with no blocks
+    /*std::set<int> indexes_of_tetrominos_with_no_blocks;
+    for (int i = 0; i < landed.size(); ++i) {
+        if (landed[i].num_blocks() <= 0) {
+            indexes_of_tetrominos_with_no_blocks.insert(i);
         }
-        putchar('\n');
     }
-#endif
+    for (auto& index : indexes_of_tetrominos_with_no_blocks) {
+        landed.erase(landed.begin() + index);
+    }*/
+
 }
 
-void Game::add_landed(Tetromino& tetromino) {
+void Game::add_landed(const Tetromino& tetromino) {
     landed.push_back(tetromino);
 
     if (tetromino.highest_block() <= 1) {
         game_over = true;
     }
 
-    // Add blocks to block field
-    for (const auto& b : tetromino.get_blocks()) {
-        block_field[b.y][b.x] = {true, &tetromino};
-    }
+    handle_row_clearing();
 }
 
 bool Game::check_collision(const Tetromino& new_pos) const {

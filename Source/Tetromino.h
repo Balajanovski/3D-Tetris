@@ -26,6 +26,7 @@ namespace TetrominoUtil {
         STAIR = 3,
         REVERSE_STAIR = 4,
         BLOCK = 5,
+        T = 6,
     };
 
     enum class TetrominoState {
@@ -51,13 +52,14 @@ public:
     void translate_left();
     void translate_right();
     void translate_down();
-    void force_translate_down(); // Used by row clearing
+    void translate_block_down(const glm::ivec2& block);
     void jump_down(); // Go as low as possible. Used when space key is pressed
 
     // Rotation functions
     void rotate_left();
     void rotate_right();
 
+    bool block_exists(const glm::ivec2& block);
     void remove_block(const glm::ivec2& block);
     void remove_blocks(const std::vector<glm::ivec2>& blocks_to_remove);
 
