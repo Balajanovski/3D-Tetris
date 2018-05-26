@@ -6,6 +6,7 @@
 #define INC_3D_TETRIS_VIEWCOMPONENT_H
 
 #include "Util/Shader.h"
+#include "RandomNumberComponent.h"
 
 #include <glad/glad.h>
 #define GLFW_INCLUDE_NONE

@@ -9,13 +9,13 @@
 #endif
 
 Game::Game() :
-        // Initialise current tetromino for it has no default constructor
         view_component("Shaders/vertex.vert", "Shaders/fragment.frag"),
         input_queue(view_component.get_window()),
+
+        // Initialise current tetromino with garbage for it has no default constructor
         current_tetromino(static_cast<TetrominoUtil::TetrominoType>(rng_component.rng(0, 5)), this)
 
 {
-    current_tetromino = Tetromino(static_cast<TetrominoUtil::TetrominoType>(rng_component.rng(0, 5)), this);
     previous_tetromino_move_time = glfwGetTime();
 }
 
@@ -97,9 +97,7 @@ void Game::tick() {
 #ifndef NDEBUG
             std::cerr << "Input: Space\n";
 #endif
-            while (current_tetromino.get_state() != TetrominoUtil::TetrominoState::LANDED) {
-                current_tetromino.translate_down();
-            }
+            current_tetromino.jump_down();
             return; // Exit function, because last translate down is redundant
             break;  // Break statement is redundant, yet there for stylistic reasons
         case GLFW_KEY_ESCAPE :

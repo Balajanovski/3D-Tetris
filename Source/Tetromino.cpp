@@ -77,12 +77,14 @@ const std::unordered_map<TetrominoUtil::TetrominoType,
         },
 };
 
-const uint32_t Tetromino::possible_colors[5] = {
+const uint32_t Tetromino::possible_colors[7] = {
     0xFF0000, // Red
     0x00FF00, // Green
     0x0000FF, // Blue
     0x00FFFF, // Cyan
     0xFFDB58, // Mustard
+    0xEE82EE, // Violet
+    0xFFFFFF, // White
 };
 
 Tetromino::Tetromino(TetrominoUtil::TetrominoType type, Game* game)
@@ -90,8 +92,9 @@ Tetromino::Tetromino(TetrominoUtil::TetrominoType type, Game* game)
           tetromino_state(TetrominoUtil::TetrominoState::MOVING),
           rotation_state(0),
           bound_game(game),
-          color(possible_colors[game->rng_component.rng(0, 4)])
+          color(possible_colors[game->rng_component.rng(0, 6)])
 {
+
     std::array<ivec2, TetrominoUtil::BLOCKS_IN_TETROMINO> relative_coords =
             tetromino_rotations.find(type)->second[rotation_state];
     unsigned int half_game_width = GAME_WIDTH / 2;
@@ -116,6 +119,7 @@ Tetromino& Tetromino::operator=(const Tetromino &rhs) {
     blocks          = rhs.blocks;
     tetromino_type  = rhs.tetromino_type;
     tetromino_state = rhs.tetromino_state;
+    color           = rhs.color;
 
     return *this;
 }
@@ -183,6 +187,7 @@ void Tetromino::translate_down() {
     // Check if block can be translated without hitting the wall
     for (auto iter = blocks.cbegin(); iter != blocks.cend(); ++iter) {
         if (iter->y > GAME_HEIGHT - 2) {
+            land_tetromino();
             return; // Exit the function because translation is impossible
                     // without hitting the wall
         }
@@ -202,6 +207,12 @@ void Tetromino::translate_down() {
     } else {
         blocks = old_blocks;        // Revert the translation
         land_tetromino();           // Set the block as landed
+    }
+}
+
+void Tetromino::jump_down() {
+    while (tetromino_state != TetrominoUtil::TetrominoState::LANDED) {
+        translate_down();
     }
 }
 

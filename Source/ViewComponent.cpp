@@ -69,10 +69,16 @@ ViewComponent::ViewComponent(const std::string& vert_shader_src, const std::stri
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     assert(glGetError() == GL_NO_ERROR);
 
-    // Set vertex attributes
-    glVertexAttribPointer(0, 2, GL_INT, GL_FALSE, 0, (void*)0);
+    // Set vertex attribute for position
+    glVertexAttribPointer(0, 2, GL_INT, GL_FALSE, 5 * sizeof(int), (void*)0);
     assert(glGetError() == GL_NO_ERROR);
     glEnableVertexAttribArray(0);
+    assert(glGetError() == GL_NO_ERROR);
+
+    // Set vertex attribute for color
+    glVertexAttribPointer(1, 3, GL_INT, GL_FALSE, 5 * sizeof(int), (void*)(2 * sizeof(int)));
+    assert(glGetError() == GL_NO_ERROR);
+    glEnableVertexAttribArray(1);
     assert(glGetError() == GL_NO_ERROR);
 
     // Unbind vao (vertex array object)
@@ -107,10 +113,18 @@ void ViewComponent::clear_screen() {
 
 void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color) {
     int vertices[] = {
-            block.x, block.y,      // Top-left
-            block.x+1, block.y,    // Top-right
-            block.x, block.y+1,    // Bottom-left
-            block.x+1, block.y+1,  // Bottom-right
+            block.x,   block.y,   static_cast<int>((color >> 16) & 0xFFu),
+                                  static_cast<int>((color >> 8) & 0xFFu),
+                                  static_cast<int>(color & 0xFFu),          // Top-left
+            block.x+1, block.y,   static_cast<int>((color >> 16) & 0xFFu),
+                                  static_cast<int>((color >> 8) & 0xFFu),
+                                  static_cast<int>(color & 0xFFu),          // Top-right
+            block.x,   block.y+1, static_cast<int>((color >> 16) & 0xFFu),
+                                  static_cast<int>((color >> 8) & 0xFFu),
+                                  static_cast<int>(color & 0xFFu),          // Bottom-left
+            block.x+1, block.y+1, static_cast<int>((color >> 16) & 0xFFu),
+                                  static_cast<int>((color >> 8) & 0xFFu),
+                                  static_cast<int>(color & 0xFFu),          // Bottom-right
     };
 
     static unsigned int indices[] = {
@@ -156,8 +170,6 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color) {
 
         glBindVertexArray(0);
     }
-
-    shader_prog->set_unsigned_int("color", color);
 
     // Draw block
     glBindVertexArray(vao);

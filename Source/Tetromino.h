@@ -6,6 +6,7 @@
 #define INC_3D_TETRIS_TETROMINO_H
 
 #include "Util/EnumClassHash.h"
+#include "RandomNumberComponent.h"
 
 #include <unordered_map>
 #include <array>
@@ -49,6 +50,7 @@ public:
     void translate_left();
     void translate_right();
     void translate_down();
+    void jump_down(); // Go as low as possible. Used when space key is pressed
 
     // Rotation functions
     void rotate_left();
@@ -81,7 +83,7 @@ private:
     const static std::unordered_map<TetrominoUtil::TetrominoType,
             std::array< std::array<glm::ivec2, TetrominoUtil::BLOCKS_IN_TETROMINO>, 4>, EnumClassHash> tetromino_rotations;
 
-    const static uint32_t possible_colors[5];
+    const static uint32_t possible_colors[7];
 
     glm::ivec2 top_left_point; // Point at the very top left of the
                                // imaginary 4x4 relative space tetrominos reside in
