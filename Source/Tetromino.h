@@ -51,12 +51,14 @@ public:
     void translate_left();
     void translate_right();
     void translate_down();
+    void force_translate_down(); // Used by row clearing
     void jump_down(); // Go as low as possible. Used when space key is pressed
 
     // Rotation functions
     void rotate_left();
     void rotate_right();
 
+    void remove_block(const glm::ivec2& block);
     void remove_blocks(const std::vector<glm::ivec2>& blocks_to_remove);
 
     bool is_block_part(const glm::ivec2 &block) const; // Check if block is a part of this tetromino
@@ -70,6 +72,7 @@ public:
     TetrominoUtil::TetrominoState get_state() const { return tetromino_state; }
     TetrominoUtil::TetrominoType get_type() const { return tetromino_type; }
     const glm::ivec2& get_top_left_point() const { return top_left_point; }
+    size_t num_blocks() const { return blocks.size(); };
 private:
     int rotation_state;
 

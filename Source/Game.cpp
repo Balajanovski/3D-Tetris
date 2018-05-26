@@ -4,9 +4,14 @@
 
 #include "Game.h"
 
+#include <algorithm>
+#include <set>
+
 #ifndef NDEBUG
 #include <iostream>
 #endif
+
+const Game::block_tracker Game::EMPTY_BLOCK_TRACKER = {false, nullptr};
 
 Game::Game() :
         view_component("Shaders/vertex.vert", "Shaders/fragment.frag"),
@@ -17,6 +22,9 @@ Game::Game() :
 
 {
     previous_tetromino_move_time = glfwGetTime();
+
+    // Sow block field with null data
+    std::fill_n(&block_field[0][0], GAME_WIDTH * GAME_HEIGHT, EMPTY_BLOCK_TRACKER);
 }
 
 void Game::begin() {
@@ -62,55 +70,62 @@ void Game::begin() {
 
 void Game::tick() {
     if (current_tetromino.get_state() == TetrominoUtil::TetrominoState::LANDED) {
+        handle_row_clearing();
+
         current_tetromino =
                 Tetromino(static_cast<TetrominoUtil::TetrominoType>(rng_component.rng(0, 5)), this);
     }
 
     // Handle input
-    int input_key = input_queue.fetch();
-    switch (input_key) {
-        case GLFW_KEY_LEFT :
-            current_tetromino.translate_left();
+    int input_key;
+    do {
+        input_key = input_queue.fetch();
+        switch (input_key) {
+            case GLFW_KEY_LEFT :
+                current_tetromino.translate_left();
 #ifndef NDEBUG
-            std::cerr << "Input: Left\n";
+                std::cerr << "Input: Left\n";
 #endif
-            break;
-        case GLFW_KEY_RIGHT :
-            current_tetromino.translate_right();
+                break;
+            case GLFW_KEY_RIGHT :
+                current_tetromino.translate_right();
 #ifndef NDEBUG
-            std::cerr << "Input: Right\n";
+                std::cerr << "Input: Right\n";
 #endif
-            break;
-        case GLFW_KEY_UP :
-            current_tetromino.rotate_right();
+                break;
+            case GLFW_KEY_UP :
+                current_tetromino.rotate_right();
 #ifndef NDEBUG
-            std::cerr << "Input: Up\n";
+                std::cerr << "Input: Up\n";
 #endif
-            break;
-        case GLFW_KEY_DOWN :
-            current_tetromino.rotate_left();
+                break;
+            case GLFW_KEY_DOWN :
+                current_tetromino.rotate_left();
 #ifndef NDEBUG
-            std::cerr << "Input: Down\n";
+                std::cerr << "Input: Down\n";
 #endif
-            break;
-        case GLFW_KEY_SPACE :
+                break;
+            case GLFW_KEY_SPACE :
 #ifndef NDEBUG
-            std::cerr << "Input: Space\n";
+                std::cerr << "Input: Space\n";
 #endif
-            current_tetromino.jump_down();
-            return; // Exit function, because last translate down is redundant
-            break;  // Break statement is redundant, yet there for stylistic reasons
-        case GLFW_KEY_ESCAPE :
+                current_tetromino.jump_down();
+                return; // Exit function, because last translate down is redundant
+                break;  // Break statement is redundant, yet there for stylistic reasons
+            case GLFW_KEY_ESCAPE :
 #ifndef NDEBUG
-            std::cerr << "Input: Escape\n";
+                std::cerr << "Input: Escape\n";
 #endif
-            game_over = true;
-            return; // Exit function, because quit command was invoked
-            break;
-        default:
-            break;
-    }
+                game_over = true;
+                return; // Exit function, because quit command was invoked
+                break;
+            default:
+                break;
+        }
+    } while(input_key != GLFW_KEY_UNKNOWN);
 
+
+    // Handle quit event
     if (view_component.should_window_close()) {
         game_over = true;
         return; // Exit function, because quit command was invoked
@@ -131,11 +146,61 @@ void Game::tick() {
 
 }
 
-void Game::add_landed(const Tetromino& t) {
-    landed.push_back(t);
+void Game::handle_row_clearing() {
+    // Get estimate for how high to check
+    int row_clearing_cap = GAME_HEIGHT;
+    for (auto &t : landed) {
+        int top_left_y = t.get_top_left_point().y;
 
-    if (t.highest_block() <= 1) {
+        if (top_left_y < row_clearing_cap) {
+            row_clearing_cap = top_left_y;
+        }
+    }
+
+    for (int y = GAME_HEIGHT - 1; y >= row_clearing_cap; --y) {
+        // Determine if row is full
+        bool row_full = true;
+        for (int x = 0; x < GAME_WIDTH; ++x) {
+            if (!block_field[y][x].block_filled) {
+                row_full = false;
+            }
+        }
+
+        // If row is full proceed to clear
+        if (row_full) {
+            for (int x = 0; x < GAME_WIDTH; ++x) {
+                block_field[y][x].block_parent->remove_block(glm::ivec2{x, y});
+                block_field[y][x].block_filled = false;
+                block_field[y][x].block_parent = nullptr;
+            }
+        }
+    }
+
+
+#ifndef NDEBUG
+    for (int y = 0; y < GAME_HEIGHT; ++y) {
+        for (int x = 0; x < GAME_WIDTH; ++x) {
+            if (block_field[y][x].block_filled) {
+                putchar('#');
+            } else {
+                putchar('-');
+            }
+        }
+        putchar('\n');
+    }
+#endif
+}
+
+void Game::add_landed(Tetromino& tetromino) {
+    landed.push_back(tetromino);
+
+    if (tetromino.highest_block() <= 1) {
         game_over = true;
+    }
+
+    // Add blocks to block field
+    for (const auto& b : tetromino.get_blocks()) {
+        block_field[b.y][b.x] = {true, &tetromino};
     }
 }
 

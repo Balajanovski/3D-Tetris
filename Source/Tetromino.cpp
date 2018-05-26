@@ -9,6 +9,10 @@
 
 #include <array>
 
+#ifndef NDEBUG
+#include <iostream>
+#endif
+
 using namespace glm;
 
 /*
@@ -197,10 +201,17 @@ void Tetromino::translate_right() {
 }
 
 void Tetromino::translate_down() {
+    if (tetromino_state == TetrominoUtil::TetrominoState::LANDED) {
+#ifndef NDEBUG
+        std::cerr << "error: translate down tetromino when landed\n";
+#endif
+        return;
+    }
+
     // Check if block can be translated without hitting the wall
     for (auto iter = blocks.cbegin(); iter != blocks.cend(); ++iter) {
         if (iter->y > GAME_HEIGHT - 2) {
-            land_tetromino();
+            land_tetromino();           // Set the block as landed
             return; // Exit the function because translation is impossible
                     // without hitting the wall
         }
@@ -208,7 +219,7 @@ void Tetromino::translate_down() {
 
     std::set<glm::ivec2, TetrominoUtil::CompareIvec2> old_blocks = blocks; // Store blocks before translation
 
-    // Translate block
+    // Translate tetromino
     blocks.clear();
     for (auto old_iter = old_blocks.begin(); old_iter != old_blocks.end(); ++old_iter) {
         blocks.insert(ivec2{old_iter->x, old_iter->y + 1});
@@ -219,8 +230,22 @@ void Tetromino::translate_down() {
                                     // because it is ok to translate
     } else {
         blocks = old_blocks;        // Revert the translation
-        land_tetromino();           // Set the block as landed
+        if (tetromino_state != TetrominoUtil::TetrominoState::LANDED) {
+            land_tetromino();           // Set the block as landed
+        }
     }
+}
+
+void Tetromino::force_translate_down() {
+    std::set<glm::ivec2, TetrominoUtil::CompareIvec2> old_blocks = blocks; // Store blocks before translation
+
+    // Translate tetromino
+    blocks.clear();
+    for (auto old_iter = old_blocks.begin(); old_iter != old_blocks.end(); ++old_iter) {
+        blocks.insert(ivec2{old_iter->x, old_iter->y + 1});
+    }
+
+    top_left_point.y += 1;
 }
 
 void Tetromino::jump_down() {
@@ -307,16 +332,34 @@ void Tetromino::rotate_right() {
     }
 }
 
-void Tetromino::remove_blocks(const std::vector<glm::ivec2>& blocks_to_remove) {
+void Tetromino::remove_block(const glm::ivec2 &block) {
     if (tetromino_state != TetrominoUtil::TetrominoState::LANDED) {
+#ifndef NDEBUG
+        std::cerr << "error: Trying to remove block from tetromino that has not landed yet\n";
+#endif
         return; // End function if the tetromino has not landed yet
     }
 
-    for (auto block_to_remove : blocks_to_remove) {
-        blocks.erase(block_to_remove);
+    printf("%s\n", (blocks.find(block) != blocks.end()) ? "true" : "false");
+    if (blocks.find(block) != blocks.end()) {
+        printf("");
     }
 
-    translate_down();
+    blocks.erase(block);
+    printf("");
+}
+
+void Tetromino::remove_blocks(const std::vector<glm::ivec2>& blocks_to_remove) {
+    if (tetromino_state != TetrominoUtil::TetrominoState::LANDED) {
+#ifndef NDEBUG
+        std::cerr << "error: Trying to remove block(s) from tetromino that has not landed yet\n";
+#endif
+        return; // End function if the tetromino has not landed yet
+    }
+
+    for (auto& block_to_remove : blocks_to_remove) {
+        remove_block(block_to_remove);
+    }
 }
 
 void Tetromino::land_tetromino() {
@@ -354,5 +397,6 @@ int Tetromino::highest_block() const {
 }
 
 const bool TetrominoUtil::CompareIvec2::operator()(const glm::ivec2 &a, const glm::ivec2 &b) const {
-    return std::tie(a.x, a.y) < std::tie(b.x, b.y);
+    int meme = a.x < b.x || (a.x == b.x && a.y < b.y);
+    return a.x < b.x || (a.x == b.x && a.y < b.y);
 }
