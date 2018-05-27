@@ -19,7 +19,7 @@ class Tetromino;
 
 class ViewComponent {
 public:
-    ViewComponent(const std::string& vert_shader_src, const std::string& frag_shader_src);
+    ViewComponent(const std::string& vert_shader_src, const std::string& frag_shader_src, const std::string& texture_src);
     ~ViewComponent();
 
     void draw_tetromino(const Tetromino &tetromino, bool is_ghost_tetromino);
@@ -36,6 +36,8 @@ private:
     GLuint vao;
     GLuint vbo;
     GLuint ebo;
+
+    GLuint block_texture;
 
     void draw_block(const glm::ivec2 &block, uint32_t color, bool is_faded);
     static constexpr int FADING_FACTOR = 50; // Expressed As Percentage

@@ -27,6 +27,9 @@ file(GLOB SOURCE_FILES
         "${PROJECT_SOURCE_DIR}/Includes/glad/*.h"
         "${PROJECT_SOURCE_DIR}/Includes/glad/*.c"
 
+        "${PROJECT_SOURCE_DIR}/Includes/std_image/*.h"
+        "${PROJECT_SOURCE_DIR}/Includes/stb_image/*.cpp"
+
         "${PROJECT_SOURCE_DIR}/Util/*.h"
         "${PROJECT_SOURCE_DIR}/Util/*.cpp"
         )

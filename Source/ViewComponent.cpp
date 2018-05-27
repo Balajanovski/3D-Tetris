@@ -6,6 +6,8 @@
 #include "Constants.h"
 #include "Tetromino.h"
 
+#include <stb_image/stb_image.h>
+
 #include <array>
 #include <cassert>
 #ifndef NDEBUG
@@ -18,7 +20,9 @@ inline void init_glad();
 static void glfw_error(int id, const char* description);
 #endif
 
-ViewComponent::ViewComponent(const std::string& vert_shader_src, const std::string& frag_shader_src) {
+ViewComponent::ViewComponent(const std::string& vert_shader_src,
+                             const std::string& frag_shader_src,
+                             const std::string& texture_src) {
 #ifndef NDEBUG
     glfwSetErrorCallback(&glfw_error);
 #endif
@@ -47,52 +51,69 @@ ViewComponent::ViewComponent(const std::string& vert_shader_src, const std::stri
 
     // Clear GL color buffer
     glClearColor(0, 0, 0, 0.0f);
-    assert(glGetError() == GL_NO_ERROR);
-
     glClear(GL_COLOR_BUFFER_BIT);
-    assert(glGetError() == GL_NO_ERROR);
 
     // Create shader
     shader_prog.reset(new Shader(vert_shader_src.c_str(), frag_shader_src.c_str()));
 
     // Generate vertex array object
     glGenVertexArrays(1, &vao);
-    assert(glGetError() == GL_NO_ERROR);
 
     // Generate vertex buffer object
     glGenBuffers(1, &vbo);
-    assert(glGetError() == GL_NO_ERROR);
 
     // Generate element buffer object
     glGenBuffers(1, &ebo);
-    assert(glGetError() == GL_NO_ERROR);
 
     // Bind vao to store VertexAttribPointer call
     glBindVertexArray(vao);
-    assert(glGetError() == GL_NO_ERROR);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    assert(glGetError() == GL_NO_ERROR);
 
+    // Setting vertex attributes
+    // -------------------------
     // Set vertex attribute for position
-    glVertexAttribPointer(0, 2, GL_INT, GL_FALSE, 6 * sizeof(int), (void*)0);
-    assert(glGetError() == GL_NO_ERROR);
+    glVertexAttribPointer(0, 2, GL_INT, GL_FALSE, 8 * sizeof(int), (void*)0);
     glEnableVertexAttribArray(0);
-    assert(glGetError() == GL_NO_ERROR);
 
     // Set vertex attribute for color
-    glVertexAttribPointer(1, 4, GL_INT, GL_FALSE, 6 * sizeof(int), (void*)(2 * sizeof(int)));
-    assert(glGetError() == GL_NO_ERROR);
+    glVertexAttribPointer(1, 4, GL_INT, GL_FALSE, 8 * sizeof(int), (void*)(2 * sizeof(int)));
     glEnableVertexAttribArray(1);
-    assert(glGetError() == GL_NO_ERROR);
+
+    // Set vertex attribute for texture coords
+    glVertexAttribPointer(2, 2, GL_INT, GL_FALSE, 8 * sizeof(int), (void*)(6 * sizeof(int)));
+    glEnableVertexAttribArray(2);
 
     // Unbind vao (vertex array object)
     glBindVertexArray(0);
-    assert(glGetError() == GL_NO_ERROR);
 
     // Unbind buffers
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    assert(glGetError() == GL_NO_ERROR);
+
+    // Load and create texture
+    // -----------------------
+    glGenTextures(1, &block_texture);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, block_texture);
+
+    // Set the texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // Set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Load image data
+    int width, height, nr_channels;
+    unsigned char* data = stbi_load(texture_src.c_str(), &width, &height, &nr_channels, 0);
+    if (data != nullptr) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    } else {
+        throw std::runtime_error(std::string("fatal error: Failed to load texture\nTexture path: ") + texture_src);
+    }
+    stbi_image_free(data);
+
 }
 
 ViewComponent::~ViewComponent() {
@@ -117,44 +138,82 @@ void ViewComponent::clear_screen() {
 }
 
 void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color, bool is_faded) {
-    std::array<int, 24> vertices;
+    std::array<int, 32> vertices;
     if (is_faded) {
         vertices = {
+                // Top-left
+                // Block coords       Colours and opacity
                 block.x,   block.y,   static_cast<int>((color >> 16) & 0xFFu),
                                       static_cast<int>((color >> 8) & 0xFFu),
-                                      static_cast<int>(color & 0xFFu),          // Top-left
+                                      static_cast<int>(color & 0xFFu),
                                       FADING_FACTOR, // Set opacity to faded
+                // Texture coords
+                0, 1,
+
+                // Top-right
+                // Block coords       Colours and opacity
                 block.x+1, block.y,   static_cast<int>((color >> 16) & 0xFFu),
                                       static_cast<int>((color >> 8) & 0xFFu),
-                                      static_cast<int>(color & 0xFFu),          // Top-right
+                                      static_cast<int>(color & 0xFFu),
                                       FADING_FACTOR, // Set opacity to faded
+                // Texture coords
+                1, 1,
+
+                // Bottom-left
+                // Block coords       Colours and opacity
                 block.x,   block.y+1, static_cast<int>((color >> 16) & 0xFFu),
                                       static_cast<int>((color >> 8) & 0xFFu),
-                                      static_cast<int>(color & 0xFFu),          // Bottom-left
+                                      static_cast<int>(color & 0xFFu),
                                       FADING_FACTOR, // Set opacity to faded
+                // Texture coords
+                0, 0,
+
+                // Bottom-right
+                // Block coords       Colours and opacity
                 block.x+1, block.y+1, static_cast<int>((color >> 16) & 0xFFu),
                                       static_cast<int>((color >> 8) & 0xFFu),
-                                      static_cast<int>(color & 0xFFu),          // Bottom-right
+                                      static_cast<int>(color & 0xFFu),
                                       FADING_FACTOR, // Set opacity to faded
+                // Texture coords
+                1, 0,
         };
     } else {
         vertices = {
+                // Top-left
+                // Block coords       Colours and opacity
                 block.x,   block.y,   static_cast<int>((color >> 16) & 0xFFu),
                                       static_cast<int>((color >> 8) & 0xFFu),
-                                      static_cast<int>(color & 0xFFu),          // Top-left
+                                      static_cast<int>(color & 0xFFu),
                                       100, // Set opacity to full since not faded
+                // Texture coords
+                0, 1,
+
+                // Top-right
+                // Block coords       Colours and opacity
                 block.x+1, block.y,   static_cast<int>((color >> 16) & 0xFFu),
                                       static_cast<int>((color >> 8) & 0xFFu),
-                                      static_cast<int>(color & 0xFFu),          // Top-right
+                                      static_cast<int>(color & 0xFFu),
                                       100, // Set opacity to full since not faded
+                // Texture coords
+                1, 1,
+
+                // Bottom-left
+                // Block coords       Colours and opacity
                 block.x,   block.y+1, static_cast<int>((color >> 16) & 0xFFu),
                                       static_cast<int>((color >> 8) & 0xFFu),
-                                      static_cast<int>(color & 0xFFu),          // Bottom-left
+                                      static_cast<int>(color & 0xFFu),
                                       100, // Set opacity to full since not faded
+                // Texture coords
+                0, 0,
+
+                // Bottom-right
+                // Block coords       Colours and opacity
                 block.x+1, block.y+1, static_cast<int>((color >> 16) & 0xFFu),
                                       static_cast<int>((color >> 8) & 0xFFu),
                                       static_cast<int>(color & 0xFFu),          // Bottom-right
                                       100, // Set opacity to full since not faded
+                // Texture coords
+                1, 0,
         };
     }
 
@@ -173,20 +232,17 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color, bool is_
         shader_prog->set_int("SCREEN_WIDTH", SCREEN_WIDTH);
         shader_prog->set_int("SCREEN_HEIGHT", SCREEN_HEIGHT);
         shader_prog->set_int("BLOCK_SIZE", BLOCK_SIZE);
+        shader_prog->set_int("block_texture", 0);
 
         glBindVertexArray(vao);
 
         // Buffer data into vbo
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        assert(glGetError() == GL_NO_ERROR);
         glBufferData(GL_ARRAY_BUFFER, (vertices).size() * sizeof(int), &vertices[0], GL_DYNAMIC_DRAW);
-        assert(glGetError() == GL_NO_ERROR);
 
         // Buffer data into ebo
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        assert(glGetError() == GL_NO_ERROR);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-        assert(glGetError() == GL_NO_ERROR);
 
         glBindVertexArray(0);
     } else {
@@ -194,9 +250,7 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color, bool is_
 
         // Reset vbo
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        assert(glGetError() == GL_NO_ERROR);
         glBufferSubData(GL_ARRAY_BUFFER, 0, (vertices).size() * sizeof(int), &vertices[0]);
-        assert(glGetError() == GL_NO_ERROR);
 
         // Ebo is not reset since it is unchanging
 
@@ -204,12 +258,11 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color, bool is_
     }
 
     // Draw block
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, block_texture);
     glBindVertexArray(vao);
-    assert(glGetError() == GL_NO_ERROR);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-    assert(glGetError() == GL_NO_ERROR);
     glBindVertexArray(0);
-    assert(glGetError() == GL_NO_ERROR);
 
     // Since it is no longer the first iteration
     if (first_iteration) {

@@ -11,7 +11,7 @@
 #endif
 
 Game::Game() :
-        view_component("Shaders/vertex.vert", "Shaders/fragment.frag"),
+        view_component("Shaders/vertex.vert", "Shaders/fragment.frag", "Resources/Textures/block.jpg"),
         input_queue(view_component.get_window()),
 
         // Initialise current tetromino with garbage for it has no default constructor

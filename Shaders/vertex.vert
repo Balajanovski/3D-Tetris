@@ -2,8 +2,10 @@
 
 layout (location = 0) in vec2 pos;
 layout (location = 1) in vec4 color;
+layout (location = 2) in vec2 texture_coords;
 
 out vec4 block_color;
+out vec2 tex_coords;
 
 uniform int SCREEN_WIDTH;
 uniform int SCREEN_HEIGHT;
@@ -16,4 +18,5 @@ void main() {
 
 	gl_Position = vec4(processed_pos, 0.0, 1.0);
 	block_color = color;
+	tex_coords = texture_coords;
 }
