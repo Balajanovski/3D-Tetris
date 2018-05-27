@@ -4,6 +4,8 @@
 
 #include "Game.h"
 
+#include <memory>
+
 int main() {
     Game game;
     game.begin();

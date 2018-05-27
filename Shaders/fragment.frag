@@ -1,6 +1,6 @@
 #version 330 core
 
-in vec3 block_color;
+in vec4 block_color;
 
 out vec4 out_color;
 
@@ -10,5 +10,5 @@ void main() {
     processed_color.g = float(block_color.g) / 255.0;
     processed_color.b = float(block_color.b) / 255.0;
 
-	out_color = vec4(processed_color, 1.0);
+	out_color = vec4(processed_color, float(block_color.a) / 100.0);
 }

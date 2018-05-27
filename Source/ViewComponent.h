@@ -22,7 +22,7 @@ public:
     ViewComponent(const std::string& vert_shader_src, const std::string& frag_shader_src);
     ~ViewComponent();
 
-    void draw_tetromino(const Tetromino& tetromino);
+    void draw_tetromino(const Tetromino &tetromino, bool is_ghost_tetromino);
     void swap_buffers();
     void clear_screen();
 
@@ -37,7 +37,8 @@ private:
     GLuint vbo;
     GLuint ebo;
 
-    void draw_block(const glm::ivec2& block, uint32_t color);
+    void draw_block(const glm::ivec2 &block, uint32_t color, bool is_faded);
+    static constexpr int FADING_FACTOR = 50; // Expressed As Percentage
 
     // Is this the first time ViewComponent has drawn?
     // Used to determine whether to use glBufferData or glBufferSubData

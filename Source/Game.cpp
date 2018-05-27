@@ -15,7 +15,8 @@ Game::Game() :
         input_queue(view_component.get_window()),
 
         // Initialise current tetromino with garbage for it has no default constructor
-        current_tetromino(static_cast<TetrominoUtil::TetrominoType>(rng_component.rng(0, 5)), this)
+        current_tetromino(static_cast<TetrominoUtil::TetrominoType>(rng_component.rng(0, 5)), this),
+        ghost_tetromino(current_tetromino)
 
 {
     previous_tetromino_move_time = glfwGetTime();
@@ -50,11 +51,16 @@ void Game::begin() {
         // Render code code
         view_component.clear_screen();
         if (current_tetromino.get_state() != TetrominoUtil::TetrominoState::LANDED) {
-            view_component.draw_tetromino(current_tetromino);
+            view_component.draw_tetromino(current_tetromino, false);
+
+            // Draw ghost indicator tetromino
+            ghost_tetromino = current_tetromino;
+            ghost_tetromino.jump_down(true);
+            view_component.draw_tetromino(ghost_tetromino, true);
         }
 
         for (auto& t : landed) {
-            view_component.draw_tetromino(t);
+            view_component.draw_tetromino(t, false);
         }
         ++frames;
 
@@ -101,7 +107,7 @@ void Game::tick() {
 #ifndef NDEBUG
                 std::cerr << "Input: Space\n";
 #endif
-                current_tetromino.jump_down();
+                current_tetromino.jump_down(false);
                 return; // Exit function, because last translate down is redundant
                 break;  // Break statement is redundant, yet there for stylistic reasons
             case GLFW_KEY_ESCAPE :
@@ -132,7 +138,7 @@ void Game::tick() {
 
     // Move down current tetromino if time passed
     if ((glfwGetTime() - previous_tetromino_move_time) >= TIME_BETWEEN_TETROMINO_MOVEMENTS) {
-        current_tetromino.translate_down();
+        current_tetromino.translate_down(false);
         previous_tetromino_move_time = glfwGetTime();
     }
 
@@ -150,6 +156,7 @@ void Game::handle_row_clearing() {
     }
 
     int rows_cleared = 0;
+    int highest_cleared_row = -1;
     for (int y = GAME_HEIGHT - 1; y >= row_clearing_cap; --y) {
         // Determine if row is full
         bool row_full = true;
@@ -169,28 +176,33 @@ void Game::handle_row_clearing() {
         // If row is full proceed to clear
         if (row_full) {
             ++rows_cleared;
+            highest_cleared_row = y;
             for (int x = 0; x < GAME_WIDTH; ++x) {
                 for (auto& l : landed) {
                     l.remove_block(glm::ivec2{x, y});
                 }
             }
 
-            // Get all blocks above deleted row to move down
-            for (auto& l : landed) {
-                auto blocks = l.get_blocks();
-                for (auto& b : blocks) {
-                    if (b.y < y) {
-                        l.translate_block_down(b);
-                    }
+        }
+    }
+
+    if (highest_cleared_row != -1) {
+        // Get all blocks above deleted row to move down
+        std::vector<glm::ivec2> blocks_to_move_down;
+        for (auto& l : landed) {
+            auto blocks = l.get_blocks();
+            for (auto& b : blocks) {
+                if (b.y < highest_cleared_row) {
+                    blocks_to_move_down.push_back(b);
                 }
             }
-
-
+            l.translate_blocks_down(blocks_to_move_down, rows_cleared);
+            blocks_to_move_down.clear();
         }
     }
 
     // Find and delete all tetrominos with no blocks
-    /*std::set<int> indexes_of_tetrominos_with_no_blocks;
+    std::set<int> indexes_of_tetrominos_with_no_blocks;
     for (int i = 0; i < landed.size(); ++i) {
         if (landed[i].num_blocks() <= 0) {
             indexes_of_tetrominos_with_no_blocks.insert(i);
@@ -198,7 +210,7 @@ void Game::handle_row_clearing() {
     }
     for (auto& index : indexes_of_tetrominos_with_no_blocks) {
         landed.erase(landed.begin() + index);
-    }*/
+    }
 
 }
 

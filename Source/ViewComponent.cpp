@@ -6,6 +6,7 @@
 #include "Constants.h"
 #include "Tetromino.h"
 
+#include <array>
 #include <cassert>
 #ifndef NDEBUG
 #include <iostream>
@@ -40,8 +41,12 @@ ViewComponent::ViewComponent(const std::string& vert_shader_src, const std::stri
                                    }
     );
 
+    // Enable alpha blending
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     // Clear GL color buffer
-    glClearColor(0, 0, 0, 1.0f);
+    glClearColor(0, 0, 0, 0.0f);
     assert(glGetError() == GL_NO_ERROR);
 
     glClear(GL_COLOR_BUFFER_BIT);
@@ -70,13 +75,13 @@ ViewComponent::ViewComponent(const std::string& vert_shader_src, const std::stri
     assert(glGetError() == GL_NO_ERROR);
 
     // Set vertex attribute for position
-    glVertexAttribPointer(0, 2, GL_INT, GL_FALSE, 5 * sizeof(int), (void*)0);
+    glVertexAttribPointer(0, 2, GL_INT, GL_FALSE, 6 * sizeof(int), (void*)0);
     assert(glGetError() == GL_NO_ERROR);
     glEnableVertexAttribArray(0);
     assert(glGetError() == GL_NO_ERROR);
 
     // Set vertex attribute for color
-    glVertexAttribPointer(1, 3, GL_INT, GL_FALSE, 5 * sizeof(int), (void*)(2 * sizeof(int)));
+    glVertexAttribPointer(1, 4, GL_INT, GL_FALSE, 6 * sizeof(int), (void*)(2 * sizeof(int)));
     assert(glGetError() == GL_NO_ERROR);
     glEnableVertexAttribArray(1);
     assert(glGetError() == GL_NO_ERROR);
@@ -95,10 +100,10 @@ ViewComponent::~ViewComponent() {
     glfwTerminate();
 }
 
-void ViewComponent::draw_tetromino(const Tetromino &tetromino) {
+void ViewComponent::draw_tetromino(const Tetromino &tetromino, bool is_ghost_tetromino) {
     uint32_t color = tetromino.get_color();
     for (const auto& block : tetromino.get_blocks()) {
-        draw_block(block, color);
+        draw_block(block, color, is_ghost_tetromino);
     }
 }
 
@@ -107,25 +112,52 @@ void ViewComponent::swap_buffers() {
 }
 
 void ViewComponent::clear_screen() {
-    glClearColor(0, 0, 0, 1.0f);
+    glClearColor(0, 0, 0, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color) {
-    int vertices[] = {
-            block.x,   block.y,   static_cast<int>((color >> 16) & 0xFFu),
-                                  static_cast<int>((color >> 8) & 0xFFu),
-                                  static_cast<int>(color & 0xFFu),          // Top-left
-            block.x+1, block.y,   static_cast<int>((color >> 16) & 0xFFu),
-                                  static_cast<int>((color >> 8) & 0xFFu),
-                                  static_cast<int>(color & 0xFFu),          // Top-right
-            block.x,   block.y+1, static_cast<int>((color >> 16) & 0xFFu),
-                                  static_cast<int>((color >> 8) & 0xFFu),
-                                  static_cast<int>(color & 0xFFu),          // Bottom-left
-            block.x+1, block.y+1, static_cast<int>((color >> 16) & 0xFFu),
-                                  static_cast<int>((color >> 8) & 0xFFu),
-                                  static_cast<int>(color & 0xFFu),          // Bottom-right
-    };
+void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color, bool is_faded) {
+    std::array<int, 24> vertices;
+    if (is_faded) {
+        vertices = {
+                block.x,   block.y,   static_cast<int>((color >> 16) & 0xFFu),
+                                      static_cast<int>((color >> 8) & 0xFFu),
+                                      static_cast<int>(color & 0xFFu),          // Top-left
+                                      FADING_FACTOR, // Set opacity to faded
+                block.x+1, block.y,   static_cast<int>((color >> 16) & 0xFFu),
+                                      static_cast<int>((color >> 8) & 0xFFu),
+                                      static_cast<int>(color & 0xFFu),          // Top-right
+                                      FADING_FACTOR, // Set opacity to faded
+                block.x,   block.y+1, static_cast<int>((color >> 16) & 0xFFu),
+                                      static_cast<int>((color >> 8) & 0xFFu),
+                                      static_cast<int>(color & 0xFFu),          // Bottom-left
+                                      FADING_FACTOR, // Set opacity to faded
+                block.x+1, block.y+1, static_cast<int>((color >> 16) & 0xFFu),
+                                      static_cast<int>((color >> 8) & 0xFFu),
+                                      static_cast<int>(color & 0xFFu),          // Bottom-right
+                                      FADING_FACTOR, // Set opacity to faded
+        };
+    } else {
+        vertices = {
+                block.x,   block.y,   static_cast<int>((color >> 16) & 0xFFu),
+                                      static_cast<int>((color >> 8) & 0xFFu),
+                                      static_cast<int>(color & 0xFFu),          // Top-left
+                                      100, // Set opacity to full since not faded
+                block.x+1, block.y,   static_cast<int>((color >> 16) & 0xFFu),
+                                      static_cast<int>((color >> 8) & 0xFFu),
+                                      static_cast<int>(color & 0xFFu),          // Top-right
+                                      100, // Set opacity to full since not faded
+                block.x,   block.y+1, static_cast<int>((color >> 16) & 0xFFu),
+                                      static_cast<int>((color >> 8) & 0xFFu),
+                                      static_cast<int>(color & 0xFFu),          // Bottom-left
+                                      100, // Set opacity to full since not faded
+                block.x+1, block.y+1, static_cast<int>((color >> 16) & 0xFFu),
+                                      static_cast<int>((color >> 8) & 0xFFu),
+                                      static_cast<int>(color & 0xFFu),          // Bottom-right
+                                      100, // Set opacity to full since not faded
+        };
+    }
+
 
     static unsigned int indices[] = {
             1, 3, 0,
@@ -147,7 +179,7 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color) {
         // Buffer data into vbo
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         assert(glGetError() == GL_NO_ERROR);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, (vertices).size() * sizeof(int), &vertices[0], GL_DYNAMIC_DRAW);
         assert(glGetError() == GL_NO_ERROR);
 
         // Buffer data into ebo
@@ -163,7 +195,7 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color) {
         // Reset vbo
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         assert(glGetError() == GL_NO_ERROR);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, (vertices).size() * sizeof(int), &vertices[0]);
         assert(glGetError() == GL_NO_ERROR);
 
         // Ebo is not reset since it is unchanging

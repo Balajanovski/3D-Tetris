@@ -138,28 +138,16 @@ Tetromino::Tetromino(TetrominoUtil::TetrominoType type, Game* game)
     }
 }
 
-Tetromino& Tetromino::operator=(const Tetromino &rhs) {
-    bound_game      = rhs.bound_game;
-    rotation_state  = rhs.rotation_state;
-    top_left_point  = rhs.top_left_point;
-    blocks          = rhs.blocks;
-    tetromino_type  = rhs.tetromino_type;
-    tetromino_state = rhs.tetromino_state;
-    color           = rhs.color;
-
-    return *this;
-}
-
-void Tetromino::translate_left() {
+bool Tetromino::translate_left() {
     if (tetromino_state == TetrominoUtil::TetrominoState::LANDED) {
-        return; // End function if the tetromino has landed
+        return false; // End function if the tetromino has landed
     }
 
     // Check if block can be translated without hitting the wall
     for (auto iter = blocks.cbegin(); iter != blocks.cend(); ++iter) {
         if (iter->x < 1) {
-            return; // Exit the function because translation is impossible
-                    // without hitting the wall
+            return false; // Exit the function because translation is impossible
+                          // without hitting the wall
         }
     }
 
@@ -175,21 +163,23 @@ void Tetromino::translate_left() {
     if (!bound_game->check_collision(*this)) {
         top_left_point.x -= 1;      // Translate the top left point
                                     // because it is ok to translate
+        return true;
     } else {
         blocks = old_blocks;        // Revert the translation
+        return false;
     }
 }
 
-void Tetromino::translate_right() {
+bool Tetromino::translate_right() {
     if (tetromino_state == TetrominoUtil::TetrominoState::LANDED) {
-        return; // End function if the tetromino has landed
+        return false; // End function if the tetromino has landed
     }
 
     // Check if block can be translated without hitting the wall
     for (auto iter = blocks.cbegin(); iter != blocks.cend(); ++iter) {
         if (iter->x > GAME_WIDTH - 2) {
-            return; // Exit the function because translation is impossible
-                    // without hitting the wall
+            return false; // Exit the function because translation is impossible
+                          // without hitting the wall
         }
     }
 
@@ -204,25 +194,33 @@ void Tetromino::translate_right() {
     if (!bound_game->check_collision(*this)) {
         top_left_point.x += 1;      // Translate the top left point
                                     // because it is ok to translate
+        return true;
     } else {
         blocks = old_blocks;        // Revert the translation
+        return false;
     }
 }
 
-void Tetromino::translate_down() {
+bool Tetromino::translate_down(bool ghost_tetromino) {
     if (tetromino_state == TetrominoUtil::TetrominoState::LANDED) {
 #ifndef NDEBUG
         std::cerr << "error: translate down tetromino when landed\n";
 #endif
-        return;
+        return false;
     }
 
     // Check if block can be translated without hitting the wall
     for (auto iter = blocks.cbegin(); iter != blocks.cend(); ++iter) {
         if (iter->y > GAME_HEIGHT - 2) {
-            land_tetromino();           // Set the block as landed
-            return; // Exit the function because translation is impossible
-                    // without hitting the wall
+            // If not a ghost tetromino, add to the landed set
+            // Otherwise just set the landed option to true
+            if (!ghost_tetromino) {
+                land_tetromino();           // Set the block as landed
+            } else {
+                tetromino_state = TetrominoUtil::TetrominoState::LANDED;
+            }
+            return false; // Exit the function because translation is impossible
+                          // without hitting the wall
         }
     }
 
@@ -237,30 +235,46 @@ void Tetromino::translate_down() {
     if (!bound_game->check_collision(*this)) {
         top_left_point.y += 1;      // Translate the top left point
                                     // because it is ok to translate
+        return true;
     } else {
         blocks = old_blocks;        // Revert the translation
-        if (tetromino_state != TetrominoUtil::TetrominoState::LANDED) {
+
+        // If not a ghost tetromino, add to the landed set
+        // Otherwise just set the landed option to true
+        if (!ghost_tetromino) {
             land_tetromino();           // Set the block as landed
+        } else {
+            tetromino_state = TetrominoUtil::TetrominoState::LANDED;
         }
+        return false;
     }
 }
 
-void Tetromino::translate_block_down(const glm::ivec2 &block) {
+void Tetromino::translate_blocks_down(const std::vector<glm::ivec2> &blocks_to_move, int y_translation_factor) {
     std::set<glm::ivec2, TetrominoUtil::CompareIvec2> old_blocks = blocks; // Store blocks before translation
-    blocks.clear();
 
-    blocks.insert(ivec2{block.x, block.y + 1});
-    for (auto old_iter = old_blocks.begin(); old_iter != old_blocks.end(); ++old_iter) {
-        if (old_iter->x != block.x && old_iter->y != block.y) {
-            blocks.insert(*old_iter);
+    blocks.clear();
+    for (auto& b : blocks_to_move) {
+        blocks.insert(ivec2{b.x, b.y + y_translation_factor});
+    }
+    for (auto& old_b : old_blocks) {
+        bool not_translated_block = true;
+        for (auto& b : blocks_to_move) {
+            if (old_b.x == b.x && old_b.y == b.y) {
+                not_translated_block = false;
+            }
+        }
+
+        if (not_translated_block) {
+            blocks.insert(old_b);
         }
     }
-    printf("");
+
 }
 
-void Tetromino::jump_down() {
+void Tetromino::jump_down(bool ghost_tetromino) {
     while (tetromino_state != TetrominoUtil::TetrominoState::LANDED) {
-        translate_down();
+        translate_down(ghost_tetromino);
     }
 }
 
@@ -293,9 +307,13 @@ void Tetromino::rotate_left() {
         // Wall kick
         for (int i = 0; i < TetrominoUtil::BLOCKS_IN_TETROMINO; ++i) {
             if (relative_coords[i].x < 0) {
-                translate_right();
+                if (!translate_right()) {
+                    blocks = old_blocks;
+                }
             } else if (relative_coords[i].x > GAME_WIDTH - 1) {
-                translate_left();
+                if (!translate_left()) {
+                    blocks = old_blocks;
+                }
             }
         }
     } else {
@@ -332,9 +350,13 @@ void Tetromino::rotate_right() {
         // Wall kick
         for (auto& b : blocks) {
             if (b.x < 0) {
-                translate_right();
+                if (!translate_right()) {
+                    blocks = old_blocks;
+                }
             } if (b.x > GAME_WIDTH - 1) {
-                translate_left();
+                if (!translate_left()) {
+                    blocks = old_blocks;
+                }
             }
         }
     } else {

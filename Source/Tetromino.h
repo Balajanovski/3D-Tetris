@@ -46,14 +46,15 @@ class Game;
 class Tetromino {
 public:
     Tetromino(TetrominoUtil::TetrominoType type, Game* game);
-    Tetromino& operator=(const Tetromino& rhs);
+    Tetromino& operator=(const Tetromino& rhs) = default;
 
     // Translation functions
-    void translate_left();
-    void translate_right();
-    void translate_down();
-    void translate_block_down(const glm::ivec2& block);
-    void jump_down(); // Go as low as possible. Used when space key is pressed
+    // Returns if translation was successful
+    bool translate_left();
+    bool translate_right();
+    bool translate_down(bool should_land);
+    void translate_blocks_down(const std::vector<glm::ivec2>& block, int y_translation_factor);
+    void jump_down(bool should_land); // Go as low as possible. Used when space key is pressed
 
     // Rotation functions
     void rotate_left();

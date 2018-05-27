@@ -34,6 +34,7 @@ private:
     InputQueue    input_queue;
 
     Tetromino current_tetromino;
+    Tetromino ghost_tetromino; // Used to indicate where the tetromino will land
     std::vector<Tetromino> landed;
 
     bool game_over = false;
