@@ -5,6 +5,7 @@
 #include "Game.h"
 
 #include <set>
+#include <algorithm>
 
 #ifndef NDEBUG
 #include <iostream>
@@ -171,7 +172,6 @@ void Game::handle_row_clearing() {
                 row_full = false;
             }
         }
-        printf("\n");
 
         // If row is full proceed to clear
         if (row_full) {
@@ -202,15 +202,9 @@ void Game::handle_row_clearing() {
     }
 
     // Find and delete all tetrominos with no blocks
-    std::set<int> indexes_of_tetrominos_with_no_blocks;
-    for (int i = 0; i < landed.size(); ++i) {
-        if (landed[i].num_blocks() <= 0) {
-            indexes_of_tetrominos_with_no_blocks.insert(i);
-        }
-    }
-    for (auto& index : indexes_of_tetrominos_with_no_blocks) {
-        landed.erase(landed.begin() + index);
-    }
+    std::remove_if(landed.begin(), landed.end(), [](const Tetromino& t) -> bool {
+        return (t.num_blocks() == 0);
+    });
 
 }
 

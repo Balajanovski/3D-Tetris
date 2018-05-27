@@ -105,9 +105,11 @@ ViewComponent::ViewComponent(const std::string& vert_shader_src,
 
     // Load image data
     int width, height, nr_channels;
+    stbi_set_flip_vertically_on_load(true);
     unsigned char* data = stbi_load(texture_src.c_str(), &width, &height, &nr_channels, 0);
+    printf("w: %d. h: %d. channels: %d.\n", width, height, nr_channels);
     if (data != nullptr) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
     } else {
         throw std::runtime_error(std::string("fatal error: Failed to load texture\nTexture path: ") + texture_src);
