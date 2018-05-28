@@ -14,6 +14,7 @@
 #include <memory>
 #include <string>
 #include <glm/vec2.hpp>
+#include <glm/mat4x4.hpp>
 
 class Tetromino;
 
@@ -38,6 +39,10 @@ private:
     GLuint ebo;
 
     GLuint block_texture;
+
+    glm::mat4 model_matrix;
+    glm::mat4 view_matrix;
+    glm::mat4 projection_matrix;
 
     void draw_block(const glm::ivec2 &block, uint32_t color, bool is_faded);
     static constexpr int FADING_FACTOR = 50; // Expressed As Percentage

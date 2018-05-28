@@ -1,11 +1,11 @@
 #version 330 core
 
-in vec4 block_color;
 in vec2 tex_coords;
 
 out vec4 out_color;
 
 uniform sampler2D block_texture;
+uniform vec4 block_color;
 
 void main() {
     vec3 processed_color;
