@@ -310,8 +310,8 @@ std::shared_ptr<std::array<int, 80>> generate_block_vertex_data(const glm::ivec2
         block.x+1, block.y  , 1, 1, 1, // Back top-left  (drawn for top face)
         block.x+1, block.y  , 0, 1, 0, // Front top-right (drawn for top face)
 
-        block.x+1, block.y+1, 0, 0, 1, // Front bottom-right (drawn for bottom face)
-        block.x  , block.y+1, 0, 1, 1, // Front bottom-left (drawn for bottom face)
+        block.x+1, block.y+1, 0, 1, 1, // Front bottom-right (drawn for bottom face)
+        block.x  , block.y+1, 0, 0, 1, // Front bottom-left (drawn for bottom face)
         block.x  , block.y+1, 1, 0, 0, // Back bottom-right  (drawn for bottom face)
         block.x+1, block.y+1, 1, 1, 0, // Back bottom-left (drawn for bottom face)
     });
