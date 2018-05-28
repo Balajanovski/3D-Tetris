@@ -123,14 +123,16 @@ ViewComponent::ViewComponent(const std::string& vert_shader_src,
     // ----------------
     // Generate matrices
     // Set model matrix to translate from game to world space
-    model_matrix = glm::translate(model_matrix, glm::vec3(-1.0f, 1.0f, 0));
-    model_matrix = glm::scale(model_matrix, glm::vec3(2.0f, 2.0f, 1.0f));
-    model_matrix = glm::scale(model_matrix, glm::vec3(1.0f/SCREEN_WIDTH, 1.0/SCREEN_HEIGHT, 1.0f));
+    model_matrix = glm::translate(model_matrix, glm::vec3(-1.0f, 1.0f, -1.0f));
+    model_matrix = glm::scale(model_matrix, glm::vec3(2.0f, 2.0f, 2.0f));
+    model_matrix = glm::scale(model_matrix, glm::vec3(1.0f/SCREEN_WIDTH, 1.0/SCREEN_HEIGHT, 1.0f/SCREEN_WIDTH));
     model_matrix = glm::scale(model_matrix, glm::vec3(BLOCK_SIZE));
     model_matrix = glm::scale(model_matrix, glm::vec3(1.0f, -1.0f, 1.0f));
 
-    view_matrix  = glm::translate(view_matrix, glm::vec3(0.0f, 0.0f, -6.0f));
-    projection_matrix = glm::perspective(glm::radians(45.0f),
+    view_matrix  = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.1f),
+                               glm::vec3(0.0f, 0.5f, 0.0f),
+                               glm::vec3(0.0f, 1.0f, 0.0f));
+    projection_matrix = glm::perspective(glm::radians(50.0f),
                                          static_cast<float>(SCREEN_WIDTH) / static_cast<float>(SCREEN_HEIGHT),
                                          0.1f,
                                          100.0f);
@@ -157,7 +159,7 @@ void ViewComponent::clear_screen() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-std::shared_ptr<std::array<int, 40>> generate_block_vertex_data(const glm::ivec2 &block);
+std::shared_ptr<std::array<int, 80>> generate_block_vertex_data(const glm::ivec2 &block);
 
 void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color, bool is_faded) {
     auto vertices = generate_block_vertex_data(block);
@@ -180,12 +182,12 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color, bool is_
             2, 7, 5,
 
             // Top face
-            5, 4, 1,
-            1, 0, 5,
+            8, 9, 10,
+            10, 11, 8,
 
             // Bottom face
-            6, 7, 2,
-            2, 3, 6,
+            12, 13, 14,
+            14, 15, 12,
     };
 
     shader_prog->use();
@@ -264,9 +266,9 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color, bool is_
     }
 }
 
-std::shared_ptr<std::array<int, 40>> generate_block_vertex_data(const glm::ivec2 &block) {
+std::shared_ptr<std::array<int, 80>> generate_block_vertex_data(const glm::ivec2 &block) {
 
-    auto vertices = std::make_shared<std::array<int, 40>>(std::array<int, 40>{
+    auto vertices = std::make_shared<std::array<int, 80>>(std::array<int, 80>{
         // Vertex coords        |Tex coords
         // x       y          z |
         block.x  , block.y  , 0, 0, 1, // Front top-left
@@ -274,10 +276,22 @@ std::shared_ptr<std::array<int, 40>> generate_block_vertex_data(const glm::ivec2
         block.x  , block.y+1, 0, 0, 0, // Front bottom-left
         block.x+1, block.y+1, 0, 1, 0, // Front bottom-right
 
-        block.x+1, block.y  , 1, 1, 1, // Back top-left
-        block.x  , block.y  , 1, 0, 1, // Back top-right
-        block.x+1, block.y+1, 1, 1, 0, // Back bottom-left
-        block.x  , block.y+1, 1, 0, 0, // Back bottom-right
+        block.x+1, block.y  , 1, 0, 1, // Back top-left
+        block.x  , block.y  , 1, 1, 1, // Back top-right
+        block.x+1, block.y+1, 1, 0, 0, // Back bottom-left
+        block.x  , block.y+1, 1, 1, 0, // Back bottom-right
+
+                                       // Separate vertices for top & bottom
+                                       // Due to texture coords
+        block.x  , block.y  , 0, 0, 0, // Front top-left (drawn for top face)
+        block.x  , block.y  , 1, 0, 1, // Back top-right (drawn for top face)
+        block.x+1, block.y  , 1, 1, 1, // Back top-left  (drawn for top face)
+        block.x+1, block.y  , 0, 1, 0, // Front top-right (drawn for top face)
+
+        block.x+1, block.y+1, 0, 0, 1, // Front bottom-right (drawn for bottom face)
+        block.x  , block.y+1, 0, 1, 1, // Front bottom-left (drawn for bottom face)
+        block.x  , block.y+1, 1, 0, 0, // Back bottom-right  (drawn for bottom face)
+        block.x+1, block.y+1, 1, 1, 0, // Back bottom-left (drawn for bottom face)
     });
 
 
