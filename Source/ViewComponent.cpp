@@ -57,6 +57,11 @@ ViewComponent::ViewComponent(const std::string& vert_shader_src,
     // Enable depth testing
     glEnable(GL_DEPTH_TEST);
 
+    // Enable face culling
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
+
     // Clear GL color buffer
     glClearColor(0, 0, 0, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -186,8 +191,8 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color, bool is_
             10, 11, 8,
 
             // Bottom face
-            12, 13, 14,
-            14, 15, 12,
+            13, 12, 15,
+            15, 14, 13,
     };
 
     shader_prog->use();
