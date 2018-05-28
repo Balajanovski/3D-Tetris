@@ -9,8 +9,8 @@ static constexpr unsigned int GAME_WIDTH  = 10;
 static constexpr unsigned int GAME_HEIGHT = 18;
 
 static constexpr unsigned int BLOCK_SIZE = 45;
-static constexpr unsigned int SCREEN_WIDTH  = GAME_WIDTH * BLOCK_SIZE;
-static constexpr unsigned int SCREEN_HEIGHT = GAME_HEIGHT * BLOCK_SIZE;
+static constexpr unsigned int SCREEN_WIDTH  = 454;
+static constexpr unsigned int SCREEN_HEIGHT = 580;
 
 static constexpr unsigned int FPS = 60;
 

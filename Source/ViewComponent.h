@@ -24,6 +24,7 @@ public:
     ~ViewComponent();
 
     void draw_tetromino(const Tetromino &tetromino, bool is_ghost_tetromino);
+    void draw_border();
     void swap_buffers();
     void clear_screen();
 

@@ -49,7 +49,9 @@ void Game::begin() {
             --delta_time;
         }
 
-        // Render code code
+        // Rendering
+        // ---------
+
         view_component.clear_screen();
         if (current_tetromino.get_state() != TetrominoUtil::TetrominoState::LANDED) {
             view_component.draw_tetromino(current_tetromino, false);
@@ -63,7 +65,9 @@ void Game::begin() {
         for (auto& t : landed) {
             view_component.draw_tetromino(t, false);
         }
+        view_component.draw_border();
         ++frames;
+
 
         view_component.swap_buffers();
     }

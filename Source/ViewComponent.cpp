@@ -129,8 +129,8 @@ ViewComponent::ViewComponent(const std::string& vert_shader_src,
     model_matrix = glm::scale(model_matrix, glm::vec3(BLOCK_SIZE));
     model_matrix = glm::scale(model_matrix, glm::vec3(1.0f, -1.0f, 1.0f));
 
-    view_matrix  = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.1f),
-                               glm::vec3(0.0f, 0.5f, 0.0f),
+    view_matrix  = glm::lookAt(glm::vec3(0.0f, -0.38f, 2.6f),
+                               glm::vec3(0.0f, -0.38f, 0.0f),
                                glm::vec3(0.0f, 1.0f, 0.0f));
     projection_matrix = glm::perspective(glm::radians(50.0f),
                                          static_cast<float>(SCREEN_WIDTH) / static_cast<float>(SCREEN_HEIGHT),
@@ -263,6 +263,28 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color, bool is_
     // Since it is no longer the first iteration
     if (first_iteration) {
         first_iteration = false;
+    }
+}
+
+void ViewComponent::draw_border() {
+    static constexpr uint32_t BORDER_COLOR = 0xC0C0C0;
+
+    // Draw bottom and top
+    for (int x = -1; x < static_cast<int>(GAME_WIDTH + 1); ++x) {
+        // Draw bottom
+        draw_block(glm::ivec2{x, GAME_HEIGHT}, BORDER_COLOR, false);
+
+        // Draw top
+        draw_block(glm::ivec2{x, -1}, BORDER_COLOR, false);
+    }
+
+    // Draw sides
+    for (int y = -1; y < static_cast<int>(GAME_HEIGHT + 1); ++y) {
+        // Draw left
+        draw_block(glm::ivec2{-1, y}, BORDER_COLOR, false);
+
+        // Draw right
+        draw_block(glm::ivec2{GAME_WIDTH, y}, BORDER_COLOR, false);
     }
 }
 
