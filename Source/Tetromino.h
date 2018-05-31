@@ -52,7 +52,7 @@ public:
     // Returns if translation was successful
     bool translate_left();
     bool translate_right();
-    bool translate_down(bool should_land);
+    bool translate_down(bool is_ghost);
     void translate_blocks_down(const std::vector<glm::ivec2>& block, int y_translation_factor);
     void jump_down(bool should_land); // Go as low as possible. Used when space key is pressed
 

@@ -27,7 +27,8 @@ static void glfw_error(int id, const char* description);
 
 ViewComponent::ViewComponent(const std::string& vert_shader_src,
                              const std::string& frag_shader_src,
-                             const std::string& texture_src) {
+                             const std::string& texture_src,
+                             const std::string& font_src) {
 #ifndef NDEBUG
     glfwSetErrorCallback(&glfw_error);
 #endif
@@ -86,11 +87,11 @@ ViewComponent::ViewComponent(const std::string& vert_shader_src,
     // Setting vertex attributes
     // -------------------------
     // Set vertex attribute for position
-    glVertexAttribPointer(0, 3, GL_INT, GL_FALSE, 5 * sizeof(int), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
     // Set vertex attribute for texture coords
-    glVertexAttribPointer(1, 2, GL_INT, GL_FALSE, 5 * sizeof(int), (void*)(3 * sizeof(int)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
     // Unbind vao (vertex array object)
@@ -141,6 +142,11 @@ ViewComponent::ViewComponent(const std::string& vert_shader_src,
                                          static_cast<float>(SCREEN_WIDTH) / static_cast<float>(SCREEN_HEIGHT),
                                          0.1f,
                                          100.0f);
+
+    // Load font component
+    // -------------------
+
+    font_component = std::make_shared<FontComponent>(font_src);
 }
 
 ViewComponent::~ViewComponent() {
@@ -164,7 +170,7 @@ void ViewComponent::clear_screen() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-std::shared_ptr<std::array<int, 80>> generate_block_vertex_data(const glm::ivec2 &block);
+std::shared_ptr<std::array<float, 80>> generate_block_vertex_data(const glm::ivec2 &block);
 
 void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color, bool is_faded) {
     auto vertices = generate_block_vertex_data(block);
@@ -197,6 +203,11 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color, bool is_
 
     shader_prog->use();
 
+    if (draw_mode != GRAPHICS_MODE) {
+        draw_mode = GRAPHICS_MODE;
+        shader_prog->set_bool("in_text_mode", false);
+    }
+
     // If it is the first iteration, glBufferData must be used to generate the buffers
     // Otherwise, use glBufferSubData to avoid reallocating the buffer every tick
     if (first_iteration) {
@@ -207,16 +218,6 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color, bool is_
 
         // Send block texture to shader
         shader_prog->set_int("block_texture", 0);
-
-        // Send matrices to shaders
-        int model_loc = glGetUniformLocation(static_cast<GLuint>(shader_prog->ID()), "model");
-        glUniformMatrix4fv(model_loc, 1, GL_FALSE, glm::value_ptr(model_matrix));
-
-        int view_loc = glGetUniformLocation(static_cast<GLuint>(shader_prog->ID()), "view");
-        glUniformMatrix4fv(view_loc, 1, GL_FALSE, glm::value_ptr(view_matrix));
-
-        int projection_loc = glGetUniformLocation(static_cast<GLuint>(shader_prog->ID()), "projection");
-        glUniformMatrix4fv(projection_loc, 1, GL_FALSE, glm::value_ptr(projection_matrix));
 
 
         glBindVertexArray(vao);
@@ -242,6 +243,16 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color, bool is_
         glBindVertexArray(0);
     }
 
+    // Send matrices to shaders
+    int model_loc = glGetUniformLocation(static_cast<GLuint>(shader_prog->ID()), "model");
+    glUniformMatrix4fv(model_loc, 1, GL_FALSE, glm::value_ptr(model_matrix));
+
+    int view_loc = glGetUniformLocation(static_cast<GLuint>(shader_prog->ID()), "view");
+    glUniformMatrix4fv(view_loc, 1, GL_FALSE, glm::value_ptr(view_matrix));
+
+    int projection_loc = glGetUniformLocation(static_cast<GLuint>(shader_prog->ID()), "projection");
+    glUniformMatrix4fv(projection_loc, 1, GL_FALSE, glm::value_ptr(projection_matrix));
+
     // Set colour and supply it to shader
     glm::vec4 color_vec;
     if (is_faded) {
@@ -255,7 +266,7 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color, bool is_
                      static_cast<int>(color & 0xFFu),
                      100};
     }
-    int color_loc = glGetUniformLocation(static_cast<GLuint>(shader_prog->ID()), "block_color");
+    int color_loc = glGetUniformLocation(static_cast<GLuint>(shader_prog->ID()), "color");
     glUniform4fv(color_loc, 1, glm::value_ptr(color_vec));
 
     // Draw block
@@ -293,9 +304,82 @@ void ViewComponent::draw_border() {
     }
 }
 
-std::shared_ptr<std::array<int, 80>> generate_block_vertex_data(const glm::ivec2 &block) {
+void ViewComponent::draw_message(glm::ivec2 top_left, float scale, const std::string& msg) {
+    shader_prog->use();
 
-    auto vertices = std::make_shared<std::array<int, 80>>(std::array<int, 80>{
+    if (draw_mode != TEXT_MODE) {
+        draw_mode = TEXT_MODE;
+        shader_prog->set_bool("in_text_mode", true);
+    }
+
+    // Change projection matrix to be orthographic
+    static const glm::mat4 orthographic_projection_matrix
+            = glm::ortho(0.0f, static_cast<float>(SCREEN_WIDTH), 0.0f, static_cast<float>(SCREEN_HEIGHT));
+    int projection_loc = glGetUniformLocation(static_cast<GLuint>(shader_prog->ID()), "projection");
+    glUniformMatrix4fv(projection_loc, 1, GL_FALSE, glm::value_ptr(orthographic_projection_matrix));
+
+    // Disable effects of view matrix
+    static const glm::mat4 identity_matrix = glm::mat4(1.0f);
+    int view_loc = glGetUniformLocation(static_cast<GLuint>(shader_prog->ID()), "view");
+    glUniformMatrix4fv(view_loc, 1, GL_FALSE, glm::value_ptr(identity_matrix));
+
+    // Disable effects of model matrix
+    int model_loc = glGetUniformLocation(static_cast<GLuint>(shader_prog->ID()), "model");
+    glUniformMatrix4fv(model_loc, 1, GL_FALSE, glm::value_ptr(identity_matrix));
+
+    // Send in text color
+    static const glm::vec4 TEXT_COLOR = {255.0f, 255.0f, 255.0f, 255.0f}; // White
+    int color_loc = glGetUniformLocation(static_cast<GLuint>(shader_prog->ID()), "color");
+    glUniform4fv(color_loc, 1, glm::value_ptr(TEXT_COLOR));
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindVertexArray(vao);
+
+    // Render text character by character
+    for (auto c = msg.cbegin(); c != msg.cend(); ++c) {
+        Glyph g = font_component->fetch_glyph(*c);
+
+        float xpos = top_left.x + g.bearing.x * scale;
+        float ypos = top_left.y - (g.size.y - g.bearing.y) * scale;
+
+        float w = g.size.x * scale;
+        float h = g.size.y * scale;
+
+        // Update VBO for each character
+        float vertices[6][5] = {
+                { xpos,     ypos + h,   0, 0, 0 },
+                { xpos,     ypos,       0, 0, 1 },
+                { xpos + w, ypos,       0, 1, 1 },
+
+                { xpos,     ypos + h,   0, 0, 0 },
+                { xpos + w, ypos,       0, 1, 1 },
+                { xpos + w, ypos + h,   0, 1, 0 }
+        };
+
+        // Update content of VBO memory
+
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        // Render glyph texture over quad
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, g.texture_id);
+
+        // Render quad
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        // Now advance cursors for next glyph (note that advance is number of 1/64 pixels)
+        top_left.x += (g.advance >> 6) * scale; // Bitshift by 6 to get value in pixels (2^6 = 64)
+    }
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+std::shared_ptr<std::array<float, 80>> generate_block_vertex_data(const glm::ivec2 &int_block) {
+    glm::vec2 block = int_block;
+
+    auto vertices = std::make_shared<std::array<float, 80>>(std::array<float, 80>{
         // Vertex coords        |Tex coords
         // x       y          z |
         block.x  , block.y  , 0, 0, 1, // Front top-left
@@ -344,7 +428,7 @@ inline void init_glad() {
 
 #ifndef NDEBUG
 static void glfw_error(int id, const char* description) {
-    std::cerr << description << "\n";
+    std::cerr << "glfw error: " << description << "\n" << "error id: " << id << "\n";
 }
 #endif
 

@@ -6,7 +6,7 @@
 #define INC_3D_TETRIS_VIEWCOMPONENT_H
 
 #include "Util/Shader.h"
-#include "RandomNumberComponent.h"
+#include "FontComponent.h"
 
 #include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
@@ -20,11 +20,16 @@ class Tetromino;
 
 class ViewComponent {
 public:
-    ViewComponent(const std::string& vert_shader_src, const std::string& frag_shader_src, const std::string& texture_src);
+    ViewComponent(const std::string& vert_shader_src,
+                  const std::string& frag_shader_src,
+                  const std::string& texture_src,
+                  const std::string& font_src);
     ~ViewComponent();
 
     void draw_tetromino(const Tetromino &tetromino, bool is_ghost_tetromino);
     void draw_border();
+    void draw_message(glm::ivec2 top_left, float scale, const std::string& msg);
+
     void swap_buffers();
     void clear_screen();
 
@@ -32,12 +37,19 @@ public:
     GLFWwindow* get_window() { return window; }
     bool should_window_close() { return glfwWindowShouldClose(window); }
 private:
+    std::shared_ptr<FontComponent> font_component;
+
     std::unique_ptr<Shader> shader_prog;
     GLFWwindow* window;
 
+    // Used for rendering objects
     GLuint vao;
     GLuint vbo;
     GLuint ebo;
+
+    // Used for rendering text
+    GLuint font_vbo;
+    GLuint font_vao;
 
     GLuint block_texture;
 
@@ -51,6 +63,14 @@ private:
     // Is this the first time ViewComponent has drawn?
     // Used to determine whether to use glBufferData or glBufferSubData
     bool first_iteration = true;
+
+    // Draw mode view component is in
+    enum DrawMode {
+        GRAPHICS_MODE = 0,
+        TEXT_MODE = 1,
+        NONE = 2,
+    };
+    DrawMode draw_mode = NONE;
 };
 
 

@@ -10,13 +10,29 @@ find_package(GLFW 3.0.0)
 message("- GLFW Located")
 include_directories(${GLFW_INCLUDE_DIR})
 
+# Define no debug
+# Comment this out if you want debug mode
+add_definitions(-DNDEBUG)
+
 if(GLFW_FOUND AND (GLFW_VERSION VERSION_EQUAL 3.0 OR GLFW_VERSION VERSION_GREATER 3.0))
     add_definitions( -DGLFW_VERSION_3 )
 endif()
 
 find_package(OpenGL REQUIRED)
-message("- OpenGL Located")
-include_directories(${OPENGL_INCLUDE_DIR})
+if (OPENGL_FOUND)
+    message("- OpenGL Located")
+else()
+    message("- error: OpenGL not Located")
+endif()
+include_directories(${OPENGL_HEADER_DIR})
+
+find_package(Freetype2 REQUIRED)
+if (FREETYPE2_FOUND)
+    message("- Freetype2 Located")
+else()
+    message("- error: Freetype2 not Located")
+endif()
+include_directories(${FREETYPE2_INCLUDE_DIRS})
 
 set(PROJECT_SOURCE_DIR ${CMAKE_SOURCE_DIR}/Source)
 
@@ -38,6 +54,7 @@ add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
 target_link_libraries(${PROJECT_NAME} LINK_PUBLIC
         ${GLFW_LIBRARIES}
+        ${FREETYPE2_LIBRARIES}
         )
 
 target_include_directories(${PROJECT_NAME} PUBLIC

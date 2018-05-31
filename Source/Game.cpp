@@ -12,10 +12,12 @@
 #endif
 
 Game::Game() :
-        view_component("Shaders/vertex.vert", "Shaders/fragment.frag", "Resources/Textures/block.jpg"),
+        view_component("Shaders/vertex.vert",
+                       "Shaders/fragment.frag",
+                       "Resources/Textures/block.jpg",
+                       "Resources/Fonts/Roboto-Regular.ttf"),
         input_queue(view_component.get_window()),
 
-        // Initialise current tetromino with garbage for it has no default constructor
         current_tetromino(static_cast<TetrominoUtil::TetrominoType>(rng_component.rng(0, 5)), this),
         ghost_tetromino(current_tetromino)
 
@@ -30,7 +32,7 @@ void Game::begin() {
     double previous_time = glfwGetTime(), timer = previous_time;
     double delta_time = 0, now_time = 0;
     int frames       = 0, updates = 0;
-    while (!game_over) {
+    while (!close_game) {
         // Handle delta time
         now_time = glfwGetTime();
         delta_time += (now_time - previous_time) / limit_FPS;
@@ -39,19 +41,32 @@ void Game::begin() {
         // Poll events for controls
         glfwPollEvents();
 
-        // Update game at FPS
-        while (delta_time >= 1.0) {
-            if (!game_over) {
-                tick();
-            }
+        // If game is in game over state
+        // game should not be updated
+        if (!game_over) {
+            // Update game at FPS
+            while (delta_time >= 1.0) {
+                if (!game_over) {
+                    tick();
+                }
 
-            ++updates;
-            --delta_time;
+                ++updates;
+                --delta_time;
+            }
+        } else {
+            while (delta_time >= 1.0) {
+                window_control();
+
+                ++updates;
+                --delta_time;
+            }
         }
+
 
         // Rendering
         // ---------
 
+        // Draw tetrominos
         view_component.clear_screen();
         if (current_tetromino.get_state() != TetrominoUtil::TetrominoState::LANDED) {
             view_component.draw_tetromino(current_tetromino, false);
@@ -61,16 +76,38 @@ void Game::begin() {
             ghost_tetromino.jump_down(true);
             view_component.draw_tetromino(ghost_tetromino, true);
         }
-
         for (auto& t : landed) {
             view_component.draw_tetromino(t, false);
         }
-        view_component.draw_border();
-        ++frames;
 
+        // Draw the border
+        view_component.draw_border();
+
+        // Display text
+        view_component.draw_message(glm::ivec2{10, SCREEN_HEIGHT - 40},
+                                    0.65f, "Score: " + std::to_string(score));
+        if (game_over) {
+            view_component.draw_message(glm::ivec2{50, SCREEN_HEIGHT - (SCREEN_HEIGHT / 2) + 60},
+                                        1.5f, "Game Over");
+            view_component.draw_message(glm::ivec2{35, SCREEN_HEIGHT - (SCREEN_HEIGHT / 2)},
+                                        0.6f, "Press Esc to Quit or R to Reset");
+        }
+
+        ++frames;
 
         view_component.swap_buffers();
     }
+}
+
+void Game::reset() {
+    game_over = false;
+    close_game = false;
+    score = 0;
+
+    landed.clear();
+    current_tetromino = Tetromino(static_cast<TetrominoUtil::TetrominoType>(rng_component.rng(0, 5)), this);
+    ghost_tetromino = current_tetromino;
+    previous_tetromino_move_time = glfwGetTime();
 }
 
 void Game::tick() {
@@ -82,7 +119,7 @@ void Game::tick() {
     // Handle input
     int input_key;
     do {
-        input_key = input_queue.fetch();
+        input_key = window_control();
         switch (input_key) {
             case GLFW_KEY_LEFT :
                 current_tetromino.translate_left();
@@ -103,7 +140,10 @@ void Game::tick() {
 #endif
                 break;
             case GLFW_KEY_DOWN :
-                current_tetromino.rotate_left();
+                current_tetromino.translate_down(false);
+
+                // Reset move time
+                previous_tetromino_move_time = glfwGetTime();
 #ifndef NDEBUG
                 std::cerr << "Input: Down\n";
 #endif
@@ -116,23 +156,15 @@ void Game::tick() {
                 return; // Exit function, because last translate down is redundant
                 break;  // Break statement is redundant, yet there for stylistic reasons
             case GLFW_KEY_ESCAPE :
-#ifndef NDEBUG
-                std::cerr << "Input: Escape\n";
-#endif
-                game_over = true;
                 return; // Exit function, because quit command was invoked
+                break;
+            case GLFW_KEY_R :
+                return;
                 break;
             default:
                 break;
         }
     } while(input_key != GLFW_KEY_UNKNOWN);
-
-
-    // Handle quit event
-    if (view_component.should_window_close()) {
-        game_over = true;
-        return; // Exit function, because quit command was invoked
-    }
 
     // Handle game over
     for (auto& t : landed) {
@@ -147,6 +179,31 @@ void Game::tick() {
         previous_tetromino_move_time = glfwGetTime();
     }
 
+}
+
+int Game::window_control() {
+    int input_key = input_queue.fetch();
+    switch(input_key) {
+        case GLFW_KEY_ESCAPE :
+#ifndef NDEBUG
+            std::cerr << "Input: Escape\n";
+#endif
+            close_game = true;
+            break;
+        case GLFW_KEY_R :
+#ifndef NDEBUG
+            std::cerr << "Input: R (Reset)\n";
+#endif
+            reset();
+            break;
+    }
+
+    if (view_component.should_window_close()) {
+        close_game = true;
+        return GLFW_KEY_ESCAPE; // Exit function, because quit command was invoked
+    }
+
+    return input_key;
 }
 
 void Game::handle_row_clearing() {
@@ -203,6 +260,17 @@ void Game::handle_row_clearing() {
             l.translate_blocks_down(blocks_to_move_down, rows_cleared);
             blocks_to_move_down.clear();
         }
+    }
+
+    // Lookup table which matches the rows cleared with the score to be awarded
+    static const int ROWS_CLEARED_SCORING_TABLE[4] = {
+            40,
+            100,
+            300,
+            1200,
+    };
+    if (rows_cleared >= 1 && rows_cleared <= 4) {
+        score += ROWS_CLEARED_SCORING_TABLE[rows_cleared - 1];
     }
 
     // Find and delete all tetrominos with no blocks

@@ -20,14 +20,15 @@ public:
     Game();
 
     void begin();
+    void reset();
+
     void add_landed(const Tetromino& t);
     bool check_collision(const Tetromino& new_pos) const;
 
     RandomNumberComponent rng_component;
 private:
-    static constexpr double MS_PER_UPDATE = 3;
-
     void tick();
+    int window_control(); // Returns fetched key
     void handle_row_clearing();
 
     ViewComponent view_component;
@@ -38,6 +39,8 @@ private:
     std::vector<Tetromino> landed;
 
     bool game_over = false;
+    bool close_game = false;
+    unsigned int score = 0;
 
     // Last time the current tetromino moved down
     double previous_tetromino_move_time;

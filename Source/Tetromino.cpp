@@ -118,7 +118,7 @@ Tetromino::Tetromino(TetrominoUtil::TetrominoType type, Game* game)
           tetromino_state(TetrominoUtil::TetrominoState::MOVING),
           rotation_state(0),
           bound_game(game),
-          color(possible_colors[rotate_colors(TetrominoUtil::NUM_POSSIBLE_COLOURS - 1)])
+          color(possible_colors[static_cast<int>(tetromino_type)])
 {
 
     std::array<ivec2, TetrominoUtil::BLOCKS_IN_TETROMINO> relative_coords =
@@ -201,7 +201,7 @@ bool Tetromino::translate_right() {
     }
 }
 
-bool Tetromino::translate_down(bool ghost_tetromino) {
+bool Tetromino::translate_down(bool is_ghost) {
     if (tetromino_state == TetrominoUtil::TetrominoState::LANDED) {
 #ifndef NDEBUG
         std::cerr << "error: translate down tetromino when landed\n";
@@ -214,7 +214,7 @@ bool Tetromino::translate_down(bool ghost_tetromino) {
         if (iter->y > GAME_HEIGHT - 2) {
             // If not a ghost tetromino, add to the landed set
             // Otherwise just set the landed option to true
-            if (!ghost_tetromino) {
+            if (!is_ghost) {
                 land_tetromino();           // Set the block as landed
             } else {
                 tetromino_state = TetrominoUtil::TetrominoState::LANDED;
@@ -241,7 +241,7 @@ bool Tetromino::translate_down(bool ghost_tetromino) {
 
         // If not a ghost tetromino, add to the landed set
         // Otherwise just set the landed option to true
-        if (!ghost_tetromino) {
+        if (!is_ghost) {
             land_tetromino();           // Set the block as landed
         } else {
             tetromino_state = TetrominoUtil::TetrominoState::LANDED;
