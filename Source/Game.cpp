@@ -5,6 +5,7 @@
 #include "Game.h"
 
 #include <set>
+#include <vector>
 #include <algorithm>
 
 #ifndef NDEBUG
@@ -217,8 +218,26 @@ void Game::handle_row_clearing() {
         }
     }
 
+
+    // Row clearing
+    // -----------
+    // Clears rows and stores rows to move down in ranges
+
     int rows_cleared = 0;
+
+    struct RowMoveRanges {
+        struct {
+            int lowest_cleared_row;
+            int highest_cleared_row;
+        } range;
+
+        int rows_cleared;
+    };
+    std::vector<RowMoveRanges> row_move_ranges;
+    int lowest_cleared_row = -1;
     int highest_cleared_row = -1;
+    bool create_range = false;
+
     for (int y = GAME_HEIGHT - 1; y >= row_clearing_cap; --y) {
         // Determine if row is full
         bool row_full = true;
@@ -236,31 +255,62 @@ void Game::handle_row_clearing() {
 
         // If row is full proceed to clear
         if (row_full) {
+
+            // Store range of blocks to move down
+            if (create_range) {
+                row_move_ranges.push_back({{lowest_cleared_row, highest_cleared_row}, rows_cleared});
+
+                // Reset counters
+                lowest_cleared_row = -1;
+                create_range = false;
+            }
+
             ++rows_cleared;
-            highest_cleared_row = y;
+            lowest_cleared_row = y - 1;
             for (int x = 0; x < GAME_WIDTH; ++x) {
                 for (auto& l : landed) {
                     l.remove_block(glm::ivec2{x, y});
                 }
             }
 
+        } else {
+            highest_cleared_row = y;
+            if (lowest_cleared_row != -1) {
+                create_range = true;
+            }
         }
     }
 
-    if (highest_cleared_row != -1) {
-        // Get all blocks above deleted row to move down
-        std::vector<glm::ivec2> blocks_to_move_down;
-        for (auto& l : landed) {
-            auto blocks = l.get_blocks();
-            for (auto& b : blocks) {
-                if (b.y < highest_cleared_row) {
-                    blocks_to_move_down.push_back(b);
+
+    // Create final range
+    // if necessary
+    if (create_range) {
+        row_move_ranges.push_back({{lowest_cleared_row, highest_cleared_row}, rows_cleared});
+    }
+
+    // Move down ranges
+    // according to amount of rows cleared
+    // when they were reached
+    if (!row_move_ranges.empty()) {
+        for (auto &r : row_move_ranges) {
+            // Get all blocks above deleted row to move down
+            std::vector<glm::ivec2> blocks_to_move_down;
+            for (auto& l : landed) {
+                auto blocks = l.get_blocks();
+                for (auto& b : blocks) {
+                    if (r.range.lowest_cleared_row >= b.y && r.range.highest_cleared_row <= b.y) {
+                        blocks_to_move_down.push_back(b);
+                    }
                 }
+                l.translate_blocks_down(blocks_to_move_down, r.rows_cleared);
+                blocks_to_move_down.clear();
             }
-            l.translate_blocks_down(blocks_to_move_down, rows_cleared);
-            blocks_to_move_down.clear();
         }
     }
+
+
+    // Scoring
+    // ------
 
     // Lookup table which matches the rows cleared with the score to be awarded
     static const int ROWS_CLEARED_SCORING_TABLE[4] = {
@@ -272,6 +322,9 @@ void Game::handle_row_clearing() {
     if (rows_cleared >= 1 && rows_cleared <= 4) {
         score += ROWS_CLEARED_SCORING_TABLE[rows_cleared - 1];
     }
+
+    // Freeing memory
+    // --------------
 
     // Find and delete all tetrominos with no blocks
     std::remove_if(landed.begin(), landed.end(), [](const Tetromino& t) -> bool {
