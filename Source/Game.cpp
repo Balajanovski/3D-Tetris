@@ -223,8 +223,6 @@ void Game::handle_row_clearing() {
     // -----------
     // Clears rows and stores rows to move down in ranges
 
-    int rows_cleared = 0;
-
     struct RowMoveRanges {
         struct {
             int lowest_cleared_row;
@@ -234,9 +232,11 @@ void Game::handle_row_clearing() {
         int rows_cleared;
     };
     std::vector<RowMoveRanges> row_move_ranges;
+
     int lowest_cleared_row = -1;
     int highest_cleared_row = -1;
     bool create_range = false;
+    int rows_cleared = 0;
 
     for (int y = GAME_HEIGHT - 1; y >= row_clearing_cap; --y) {
         // Determine if row is full
