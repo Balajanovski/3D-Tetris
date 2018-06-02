@@ -420,6 +420,22 @@ std::shared_ptr<std::array<float, 80>> generate_block_vertex_data(const glm::ive
     return vertices;
 };
 
+void ViewComponent::rotate_view_left() {
+    view_rot -= ROTATION_INCREMENT;
+    if (view_rot <= -(2 * M_PI) + ROTATION_INCREMENT &&
+        view_rot >= -(2 * M_PI) - ROTATION_INCREMENT) {
+        view_rot = 0;
+    }
+}
+
+void ViewComponent::rotate_view_right() {
+    view_rot += ROTATION_INCREMENT;
+    if (view_rot <= (2 * M_PI) + ROTATION_INCREMENT &&
+        view_rot >= (2 * M_PI) - ROTATION_INCREMENT) {
+        view_rot = 0;
+    }
+}
+
 inline void init_glfw() {
     glfwInit();
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);

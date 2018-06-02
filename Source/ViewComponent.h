@@ -34,8 +34,8 @@ public:
     void swap_buffers();
     void clear_screen();
 
-    void rotate_view_left()  { view_rot -= ROTATION_INCREMENT;   }
-    void rotate_view_right() { view_rot += ROTATION_INCREMENT;   }
+    void rotate_view_left();
+    void rotate_view_right();
     void reset_view_rotation()        { view_rot = 0.0f; }
 
     // Getters
