@@ -67,6 +67,15 @@ void Game::begin() {
         // Rendering
         // ---------
 
+        // Rotate scene
+        if (game_over) {
+            view_component.rotate_view_right();
+        } else if (paused) {
+            view_component.rotate_view_left();
+        } else {
+            view_component.reset_view_rotation();
+        }
+
         // Draw tetrominos
         view_component.clear_screen();
         if (current_tetromino.get_state() != TetrominoUtil::TetrominoState::LANDED) {
@@ -115,6 +124,8 @@ void Game::reset() {
     current_tetromino = Tetromino(static_cast<TetrominoUtil::TetrominoType>(rng_component.rng(0, 5)), this);
     ghost_tetromino = current_tetromino;
     previous_tetromino_move_time = glfwGetTime();
+
+    view_component.reset_view_rotation();
 }
 
 void Game::tick() {
@@ -189,7 +200,8 @@ void Game::tick() {
 }
 
 int Game::window_control() {
-    int input_key = input_queue.fetch();
+    auto input_key = input_queue.fetch();
+
     switch(input_key) {
         case GLFW_KEY_ESCAPE :
 #ifndef NDEBUG
@@ -210,6 +222,7 @@ int Game::window_control() {
             paused = !paused;
             break;
     }
+
 
     if (view_component.should_window_close()) {
         close_game = true;

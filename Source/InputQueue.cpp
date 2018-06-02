@@ -28,9 +28,6 @@ InputQueue::InputQueue(GLFWwindow* win) : window(win) {
 
     // Set callback
     glfwSetKeyCallback(window, key_callback);
-
-    // Reset user pointer so no dangling pointers are accessed
-    //glfwSetWindowUserPointer(window, window);
 }
 
 InputQueue::GLFWkey InputQueue::fetch() {

@@ -7,6 +7,7 @@
 
 #include "Util/Shader.h"
 #include "FontComponent.h"
+#include "Constants.h"
 
 #include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
@@ -33,6 +34,10 @@ public:
     void swap_buffers();
     void clear_screen();
 
+    void rotate_view_left()  { view_rot -= ROTATION_INCREMENT;   }
+    void rotate_view_right() { view_rot += ROTATION_INCREMENT;   }
+    void reset_view_rotation()        { view_rot = 0.0f; }
+
     // Getters
     GLFWwindow* get_window() { return window; }
     bool should_window_close() { return glfwWindowShouldClose(window); }
@@ -47,15 +52,14 @@ private:
     GLuint vbo;
     GLuint ebo;
 
-    // Used for rendering text
-    GLuint font_vbo;
-    GLuint font_vao;
-
     GLuint block_texture;
 
     glm::mat4 model_matrix;
     glm::mat4 view_matrix;
     glm::mat4 projection_matrix;
+
+    // Value used to determine how much the view matrix should be rotated
+    float view_rot = 0.0f;
 
     void draw_block(const glm::ivec2 &block, uint32_t color, bool is_faded);
     static constexpr int FADING_FACTOR = 50; // Expressed As Percentage

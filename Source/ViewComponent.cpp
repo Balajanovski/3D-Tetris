@@ -15,6 +15,8 @@
 #include <array>
 #include <cassert>
 #include <memory>
+#include <cmath>
+
 #ifndef NDEBUG
 #include <iostream>
 #endif
@@ -135,9 +137,6 @@ ViewComponent::ViewComponent(const std::string& vert_shader_src,
     model_matrix = glm::scale(model_matrix, glm::vec3(BLOCK_SIZE));
     model_matrix = glm::scale(model_matrix, glm::vec3(1.0f, -1.0f, 1.0f));
 
-    view_matrix  = glm::lookAt(glm::vec3(0.0f, -0.38f, 2.6f),
-                               glm::vec3(0.0f, -0.38f, 0.0f),
-                               glm::vec3(0.0f, 1.0f, 0.0f));
     projection_matrix = glm::perspective(glm::radians(50.0f),
                                          static_cast<float>(SCREEN_WIDTH) / static_cast<float>(SCREEN_HEIGHT),
                                          0.1f,
@@ -244,12 +243,24 @@ void ViewComponent::draw_block(const glm::ivec2 &block, uint32_t color, bool is_
     }
 
     // Send matrices to shaders
+    // ------------------------
+
+    // Send model matrix
     int model_loc = glGetUniformLocation(static_cast<GLuint>(shader_prog->ID()), "model");
     glUniformMatrix4fv(model_loc, 1, GL_FALSE, glm::value_ptr(model_matrix));
 
+    // Rotate view matrix
+    static constexpr float radius = DISTANCE_BETWEEN_CAMERA_AND_GAME;
+    float camX = std::sin(view_rot) * radius;
+    float camZ = std::cos(view_rot) * radius;
+    view_matrix  = glm::lookAt(glm::vec3(camX, -0.38f, camZ),
+                               glm::vec3(0.0f, -0.38f, 0.0f),
+                               glm::vec3(0.0f, 1.0f, 0.0f));
+    // Send view matrix
     int view_loc = glGetUniformLocation(static_cast<GLuint>(shader_prog->ID()), "view");
     glUniformMatrix4fv(view_loc, 1, GL_FALSE, glm::value_ptr(view_matrix));
 
+    // Send projection matrix
     int projection_loc = glGetUniformLocation(static_cast<GLuint>(shader_prog->ID()), "projection");
     glUniformMatrix4fv(projection_loc, 1, GL_FALSE, glm::value_ptr(projection_matrix));
 
