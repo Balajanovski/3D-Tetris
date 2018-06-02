@@ -40,6 +40,7 @@ private:
 
     bool game_over = false;
     bool close_game = false;
+    bool paused = false;
     unsigned int score = 0;
 
     // Last time the current tetromino moved down

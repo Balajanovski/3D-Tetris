@@ -42,9 +42,9 @@ void Game::begin() {
         // Poll events for controls
         glfwPollEvents();
 
-        // If game is in game over state
+        // If game is in game over state or paused
         // game should not be updated
-        if (!game_over) {
+        if (!game_over && !paused) {
             // Update game at FPS
             while (delta_time >= 1.0) {
                 if (!game_over) {
@@ -92,6 +92,11 @@ void Game::begin() {
                                         1.5f, "Game Over");
             view_component.draw_message(glm::ivec2{35, SCREEN_HEIGHT - (SCREEN_HEIGHT / 2)},
                                         0.6f, "Press Esc to Quit or R to Reset");
+        } else if (paused) {
+            view_component.draw_message(glm::ivec2{35, SCREEN_HEIGHT - (SCREEN_HEIGHT / 2) + 60},
+                                        1.3f, "Game Paused");
+            view_component.draw_message(glm::ivec2{105, SCREEN_HEIGHT - (SCREEN_HEIGHT / 2)},
+                                        0.6f, "Press P to unpause");
         }
 
         ++frames;
@@ -103,6 +108,7 @@ void Game::begin() {
 void Game::reset() {
     game_over = false;
     close_game = false;
+    paused = false;
     score = 0;
 
     landed.clear();
@@ -196,6 +202,12 @@ int Game::window_control() {
             std::cerr << "Input: R (Reset)\n";
 #endif
             reset();
+            break;
+        case GLFW_KEY_P :
+#ifndef NDEBUG
+            std::cerr << "Input: R (Reset)\n";
+#endif
+            paused = !paused;
             break;
     }
 
