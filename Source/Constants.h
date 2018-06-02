@@ -17,6 +17,8 @@ static constexpr unsigned int FPS = 60;
 static constexpr float ROTATION_INCREMENT = 0.007f;
 static constexpr float DISTANCE_BETWEEN_CAMERA_AND_GAME = 2.6f;
 
+static constexpr int MAX_NUM_SFX_SOURCES = 10;
+
 // Seconds till the current tetromino moves down
 static constexpr double TIME_BETWEEN_TETROMINO_MOVEMENTS = 0.5;
 

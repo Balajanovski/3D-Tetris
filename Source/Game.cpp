@@ -24,10 +24,15 @@ Game::Game() :
                                                  FileSystem::getPath("Resources/Music/ThemeB.wav"),
                                                  FileSystem::getPath("Resources/Music/ThemeC.wav"),
                                                  FileSystem::getPath("Resources/Music/ThemeD.wav")},
-                                                 FileSystem::getPath("Resources/Music/Gameover.wav"),
-                                                 this),
+                        FileSystem::getPath("Resources/Music/Gameover.wav"),
+                        std::map<SoundUtil::SFXSound, std::string>{
+                                {SoundUtil::SFXSound::TETRIS, FileSystem::getPath("Resources/SFX/Tetris.wav")},
+                                {SoundUtil::SFXSound::LINE_CLEAR, FileSystem::getPath("Resources/SFX/LineClear.wav")},
+                                {SoundUtil::SFXSound::MOVE, FileSystem::getPath("Resources/SFX/Move.wav")},
+                        },
+                        this),
 
-        current_tetromino(static_cast<TetrominoUtil::TetrominoType>(rng_component.rng(0, 5)), this),
+        current_tetromino(static_cast<TetrominoUtil::TetrominoType>(rng_component.rng(0, 6)), this),
         ghost_tetromino(current_tetromino)
 
 {
@@ -136,7 +141,7 @@ void Game::reset() {
     score = 0;
 
     landed.clear();
-    current_tetromino = Tetromino(static_cast<TetrominoUtil::TetrominoType>(rng_component.rng(0, 5)), this);
+    current_tetromino = Tetromino(static_cast<TetrominoUtil::TetrominoType>(rng_component.rng(0, 6)), this);
     ghost_tetromino = current_tetromino;
     previous_tetromino_move_time = glfwGetTime();
 
@@ -156,24 +161,28 @@ void Game::tick() {
         switch (input_key) {
             case GLFW_KEY_LEFT :
                 current_tetromino.translate_left();
+                sound_component.play_sfx(SoundUtil::SFXSound::MOVE);
 #ifndef NDEBUG
                 std::cerr << "Input: Left\n";
 #endif
                 break;
             case GLFW_KEY_RIGHT :
                 current_tetromino.translate_right();
+                sound_component.play_sfx(SoundUtil::SFXSound::MOVE);
 #ifndef NDEBUG
                 std::cerr << "Input: Right\n";
 #endif
                 break;
             case GLFW_KEY_UP :
                 current_tetromino.rotate_right();
+                sound_component.play_sfx(SoundUtil::SFXSound::MOVE);
 #ifndef NDEBUG
                 std::cerr << "Input: Up\n";
 #endif
                 break;
             case GLFW_KEY_DOWN :
                 current_tetromino.translate_down(false);
+                sound_component.play_sfx(SoundUtil::SFXSound::MOVE);
 
                 // Reset move time
                 previous_tetromino_move_time = glfwGetTime();
@@ -186,6 +195,7 @@ void Game::tick() {
                 std::cerr << "Input: Space\n";
 #endif
                 current_tetromino.jump_down(false);
+                sound_component.play_sfx(SoundUtil::SFXSound::MOVE);
                 return; // Exit function, because last translate down is redundant
                 break;  // Break statement is redundant, yet there for stylistic reasons
             case GLFW_KEY_ESCAPE :
@@ -361,6 +371,13 @@ void Game::handle_row_clearing() {
     };
     if (rows_cleared >= 1 && rows_cleared <= 4) {
         score += ROWS_CLEARED_SCORING_TABLE[rows_cleared - 1];
+    }
+
+    // Play sound according to how many rows were cleared
+    if (rows_cleared >= 4) {
+        sound_component.play_sfx(SoundUtil::SFXSound::TETRIS);
+    } else if (rows_cleared >= 1 && rows_cleared < 4) {
+        sound_component.play_sfx(SoundUtil::SFXSound::LINE_CLEAR);
     }
 
     // Freeing memory

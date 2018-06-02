@@ -17,11 +17,15 @@
 // Util function to convert DR Wav format into OpenAL format
 static inline ALenum to_al_format(short channels, short samples);
 
+// Creates OpenAL buffer from source of WAV file
+static void buffer_wav(const std::string& src, ALuint buffer);
+
 // Util function to check for OpenAL errors
-void check_for_al_error();
+static void check_for_al_error();
 
 SoundComponent::SoundComponent(const std::vector<std::string>& music_srcs,
                                const std::string& game_over_music_src,
+                               const std::map<SoundUtil::SFXSound, std::string>& sfx_srcs,
                                Game* game)
         : num_songs(music_srcs.size()),
           music_buffers(num_songs),
@@ -61,7 +65,7 @@ SoundComponent::SoundComponent(const std::vector<std::string>& music_srcs,
     // Generate sources
     // ---------------
 
-    // Generate source
+    // Generate music source
     alGenSources(1, &music_source);
     check_for_al_error();
     alSourcei(music_source, AL_SOURCE_RELATIVE, AL_TRUE);
@@ -84,48 +88,23 @@ SoundComponent::SoundComponent(const std::vector<std::string>& music_srcs,
     alGenBuffers(num_songs, &music_buffers[0]);
     check_for_al_error();
     for (int i = 0; i < num_songs; ++i) {
-        // Open WAV file
-        drwav* wav = drwav_open_file(music_srcs[i].c_str());
-        if (wav == nullptr) {
-            throw std::runtime_error(std::string("sound error: unable to open file - ") + music_srcs[i]);
-        }
-
-        // Buffer WAV data
-        auto sample_data = (int32_t*) std::malloc((size_t)wav->totalSampleCount * sizeof(int32_t));
-        drwav_read_s32(wav, wav->totalSampleCount, sample_data);
-
-        // Buffer the data in
-        alBufferData(music_buffers[i], to_al_format(wav->channels, wav->bitsPerSample),
-                     sample_data, (size_t)wav->totalSampleCount * sizeof(int32_t), wav->fmt.sampleRate * 2);
-        check_for_al_error();
-
-        // Cleanup
-        free(sample_data);
-        drwav_close(wav);
+        buffer_wav(music_srcs[i], music_buffers[i]);
     }
-
     // Create game over music buffer
     alGenBuffers(1, &game_over_music_buffer);
+    buffer_wav(game_over_music_src, game_over_music_buffer);
 
-    // Open WAV file
-    drwav* wav = drwav_open_file(game_over_music_src.c_str());
-    if (wav == nullptr) {
-        throw std::runtime_error(std::string("sound error: unable to open file - ") + game_over_music_src);
+
+    // Create SFX buffers
+    // ------------------
+    for (auto iter = sfx_srcs.begin(); iter != sfx_srcs.end(); ++iter) {
+        GLuint new_buffer;
+        alGenBuffers(1, &new_buffer);
+
+        buffer_wav(iter->second, new_buffer);
+
+        sfx_buffers.insert(std::make_pair(iter->first, new_buffer));
     }
-
-    // Buffer WAV data
-    auto sample_data = (int32_t*) std::malloc((size_t)wav->totalSampleCount * sizeof(int32_t));
-    drwav_read_s32(wav, wav->totalSampleCount, sample_data);
-
-    // Buffer the data in
-    alBufferData(game_over_music_buffer, to_al_format(wav->channels, wav->bitsPerSample),
-                 sample_data, (size_t)wav->totalSampleCount * sizeof(int32_t), wav->fmt.sampleRate * 2);
-    check_for_al_error();
-
-    // Cleanup
-    free(sample_data);
-    drwav_close(wav);
-
 
 }
 
@@ -144,7 +123,7 @@ void SoundComponent::play_music() {
         check_for_al_error();
         playing_game_over_music = false;
     } else {
-        // Find out sound source states
+        // Find out sound source state
         ALint source_state;
         alGetSourcei(music_source, AL_SOURCE_STATE, &source_state);
         check_for_al_error();
@@ -182,6 +161,56 @@ void SoundComponent::play_game_over_music() {
     }
 }
 
+void SoundComponent::play_sfx(SoundUtil::SFXSound sfx) {
+
+
+    // Generate sfx source
+    ALuint new_source;
+    alGenSources(1, &new_source);
+    check_for_al_error();
+    alSourcei(music_source, AL_SOURCE_RELATIVE, AL_TRUE);
+    check_for_al_error();
+    alSource3f(music_source, AL_POSITION, 0.0f, 0.0f, 0.0f);
+    check_for_al_error();
+    alSourcef(music_source, AL_PITCH, 1);
+    check_for_al_error();
+    alSourcef(music_source, AL_GAIN, 1.0f);
+    check_for_al_error();
+    alSource3f(music_source, AL_VELOCITY, 0.0f, 0.0f, 0.0f);
+    check_for_al_error();
+    alSourcei(music_source, AL_LOOPING, AL_FALSE);
+    check_for_al_error();
+
+    // Append sfx buffer to source
+    alSourcei(new_source, AL_BUFFER, sfx_buffers.find(sfx)->second);
+    check_for_al_error();
+
+    // Play source
+    alSourcePlay(new_source);
+    check_for_al_error();
+
+    // Add source to freeing queue
+    if (sfx_sources_index < MAX_NUM_SFX_SOURCES) {
+        sfx_sources[sfx_sources_index++] = new_source;
+    }
+
+}
+
+void SoundComponent::tick() {
+    for (int i = 0; i < MAX_NUM_SFX_SOURCES; ++i) {
+        // Find out sound source state
+        ALint source_state;
+        alGetSourcei(sfx_sources[i], AL_SOURCE_STATE, &source_state);
+        check_for_al_error();
+
+        // Free source if not playing sound
+        if (source_state == AL_STOPPED) {
+            alDeleteSources(1, &sfx_sources[i]);
+            check_for_al_error();
+        }
+    }
+}
+
 // Util function to convert dr_wav format into OpenAL format
 static inline ALenum to_al_format(short channels, short samples) {
     bool stereo = (channels > 1);
@@ -202,8 +231,30 @@ static inline ALenum to_al_format(short channels, short samples) {
     }
 }
 
+// Creates OpenAL buffer from source of WAV file
+static void buffer_wav(const std::string& src, ALuint buffer) {
+    // Open WAV file
+    drwav* wav = drwav_open_file(src.c_str());
+    if (wav == nullptr) {
+        throw std::runtime_error(std::string("dr_wav error: unable to open file - ") + src);
+    }
+
+    // Buffer WAV data
+    auto sample_data = (int32_t*) std::malloc((size_t)wav->totalSampleCount * sizeof(int32_t));
+    drwav_read_s32(wav, wav->totalSampleCount, sample_data);
+
+    // Buffer the data in
+    alBufferData(buffer, to_al_format(wav->channels, wav->bitsPerSample),
+                 sample_data, (size_t)wav->totalSampleCount * sizeof(int32_t), wav->fmt.sampleRate * 2);
+    check_for_al_error();
+
+    // Cleanup
+    free(sample_data);
+    drwav_close(wav);
+}
+
 // Util function to check for OpenAL errors
-void check_for_al_error() {
+static void check_for_al_error() {
     ALCenum error;
     error = alGetError();
 
