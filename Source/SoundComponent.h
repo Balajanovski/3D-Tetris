@@ -16,23 +16,25 @@ class Game;
 
 class SoundComponent {
 public:
-    SoundComponent(const std::vector<std::string>& music_srcs, Game* game);
+    SoundComponent(const std::vector<std::string>& music_srcs, const std::string& game_over_music_src, Game* game);
     ~SoundComponent();
 
     void play_music();
+    void play_game_over_music();
 private:
     Game* bound_game;
 
     int num_songs;
     int current_song;
+    bool playing_game_over_music = false;
 
     ALCdevice* device;
     ALCcontext* context;
 
-    // Sound source
-    ALuint source;
+    ALuint music_source;
 
     std::vector<ALuint> music_buffers;
+    ALuint game_over_music_buffer;
 };
 
 

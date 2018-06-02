@@ -20,7 +20,9 @@ static inline ALenum to_al_format(short channels, short samples);
 // Util function to check for OpenAL errors
 void check_for_al_error();
 
-SoundComponent::SoundComponent(const std::vector<std::string> &music_srcs, Game* game)
+SoundComponent::SoundComponent(const std::vector<std::string>& music_srcs,
+                               const std::string& game_over_music_src,
+                               Game* game)
         : num_songs(music_srcs.size()),
           music_buffers(num_songs),
           bound_game(game),
@@ -48,9 +50,9 @@ SoundComponent::SoundComponent(const std::vector<std::string> &music_srcs, Game*
 
     // Set listener position
     // ---------------------
-    alListener3f(AL_POSITION, 9999999999.0f, 0, 0);
+    alListener3f(AL_POSITION, 0.0f, 0.0f, 0.0f);
     check_for_al_error();
-    alListener3f(AL_VELOCITY, 0, 0, 0);
+    alListener3f(AL_VELOCITY, 0.0f, 0.0f, 0.0f);
     check_for_al_error();
     float listener_orientation[] = { 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f };
     alListenerfv(AL_ORIENTATION, listener_orientation);
@@ -60,19 +62,19 @@ SoundComponent::SoundComponent(const std::vector<std::string> &music_srcs, Game*
     // ---------------
 
     // Generate source
-    alGenSources(1, &source);
+    alGenSources(1, &music_source);
     check_for_al_error();
-    alSourcei(source, AL_SOURCE_RELATIVE, AL_TRUE);
+    alSourcei(music_source, AL_SOURCE_RELATIVE, AL_TRUE);
     check_for_al_error();
-    alSource3f(source, AL_POSITION, 0.0f, 0.0f, 0.0f);
+    alSource3f(music_source, AL_POSITION, 0.0f, 0.0f, 0.0f);
     check_for_al_error();
-    alSourcef(source, AL_PITCH, 1);
+    alSourcef(music_source, AL_PITCH, 1);
     check_for_al_error();
-    alSourcef(source, AL_GAIN, 0.5f);
+    alSourcef(music_source, AL_GAIN, 0.5f);
     check_for_al_error();
-    alSource3f(source, AL_VELOCITY, 0, 0, 0);
+    alSource3f(music_source, AL_VELOCITY, 0.0f, 0.0f, 0.0f);
     check_for_al_error();
-    alSourcei(source, AL_LOOPING, AL_FALSE);
+    alSourcei(music_source, AL_LOOPING, AL_FALSE);
     check_for_al_error();
 
 
@@ -101,10 +103,34 @@ SoundComponent::SoundComponent(const std::vector<std::string> &music_srcs, Game*
         free(sample_data);
         drwav_close(wav);
     }
+
+    // Create game over music buffer
+    alGenBuffers(1, &game_over_music_buffer);
+
+    // Open WAV file
+    drwav* wav = drwav_open_file(game_over_music_src.c_str());
+    if (wav == nullptr) {
+        throw std::runtime_error(std::string("sound error: unable to open file - ") + game_over_music_src);
+    }
+
+    // Buffer WAV data
+    auto sample_data = (int32_t*) std::malloc((size_t)wav->totalSampleCount * sizeof(int32_t));
+    drwav_read_s32(wav, wav->totalSampleCount, sample_data);
+
+    // Buffer the data in
+    alBufferData(game_over_music_buffer, to_al_format(wav->channels, wav->bitsPerSample),
+                 sample_data, (size_t)wav->totalSampleCount * sizeof(int32_t), wav->fmt.sampleRate * 2);
+    check_for_al_error();
+
+    // Cleanup
+    free(sample_data);
+    drwav_close(wav);
+
+
 }
 
 SoundComponent::~SoundComponent() {
-    alDeleteSources(1, &source);
+    alDeleteSources(1, &music_source);
     alDeleteBuffers(num_songs, &music_buffers[0]);
     device = alcGetContextsDevice(context);
     alcMakeContextCurrent(NULL);
@@ -113,24 +139,46 @@ SoundComponent::~SoundComponent() {
 }
 
 void SoundComponent::play_music() {
-
-    // Find out sound source states
-    ALint left_source_state;
-    alGetSourcei(source, AL_SOURCE_STATE, &left_source_state);
-    check_for_al_error();
-
-    if (left_source_state != AL_PLAYING) {
-        // Bind music to sources
-        alSourcei(source, AL_BUFFER, music_buffers[current_song]);
+    if (playing_game_over_music) {
+        alSourceStop(music_source);
+        check_for_al_error();
+        playing_game_over_music = false;
+    } else {
+        // Find out sound source states
+        ALint source_state;
+        alGetSourcei(music_source, AL_SOURCE_STATE, &source_state);
         check_for_al_error();
 
-        alSourcePlay(source);
-        check_for_al_error();
+        if (source_state != AL_PLAYING) {
+            // Bind music to sources
+            alSourcei(music_source, AL_BUFFER, music_buffers[current_song]);
+            check_for_al_error();
 
-        ++current_song;
-        if (current_song >= num_songs) {
-            current_song = 0;
+            alSourcePlay(music_source);
+            check_for_al_error();
+
+            ++current_song;
+            if (current_song >= num_songs) {
+                current_song = 0;
+            }
         }
+    }
+
+
+}
+
+void SoundComponent::play_game_over_music() {
+    if (!playing_game_over_music) {
+        alSourceStop(music_source);
+        check_for_al_error();
+
+        alSourcei(music_source, AL_BUFFER, game_over_music_buffer);
+        check_for_al_error();
+
+        alSourcePlay(music_source);
+        check_for_al_error();
+
+        playing_game_over_music = true;
     }
 }
 
