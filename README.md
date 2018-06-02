@@ -37,6 +37,13 @@ Fully functional traditional tetris with 3D visuals using OpenGL.
 **P key** : Pause game<br>
 **R key** : Reset game<br>
 
-## Screenshot of Gameplay
+## Credits
+* Theme A : Nintendo. From Gameboy Advanced Tetris.
+* Themes [B](https://www.youtube.com/watch?v=O7PKpR6D4Aw), [C](https://www.youtube.com/watch?v=V8Doy9RC1Ss), [D](https://www.youtube.com/watch?v=ed7ek0SP6p0) : Youtube Channel [Spoon.exe](https://www.youtube.com/channel/UC4kp0XOKELyui0qCIn1loFg). <br>
+* [Gameover music](https://www.youtube.com/watch?v=SBcI0zNnmaE) : Youtube Channel [Cosmic Famicommunist](https://www.youtube.com/channel/UCnZVxzmY7-Qw12AuAQUModw)
+* SFX created using [Bfxr](https://www.bfxr.net/)
 
-![Screenshot of Gameplay](https://raw.githubusercontent.com/Balajanovski/3D-Tetris/master/screenshot.png)
+## Screenshots of Gameplay
+
+![Screenshot 1 of Gameplay](https://raw.githubusercontent.com/Balajanovski/3D-Tetris/master/screenshot.png)<br>
+![Screenshot 2 of Gameplay](https://raw.githubusercontent.com/Balajanovski/3D-Tetris/master/screenshot2.png)<br>
