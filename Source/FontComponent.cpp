@@ -16,7 +16,7 @@ FontComponent::FontComponent(const std::string &font_src) {
     }
 
     FT_Face face = nullptr;
-    if (FT_New_Face(ft, "Resources/Fonts/Roboto-Regular.ttf", 0, &face))
+    if (FT_New_Face(ft, font_src.c_str(), 0, &face))
         std::cerr << "Freetype error: Failed to load font\n";
     FT_Set_Pixel_Sizes(face, 0, 48);
 

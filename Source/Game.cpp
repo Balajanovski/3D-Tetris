@@ -4,6 +4,8 @@
 
 #include "Game.h"
 
+#include "Util/Filesystem.h"
+
 #include <set>
 #include <vector>
 #include <algorithm>
@@ -13,16 +15,16 @@
 #endif
 
 Game::Game() :
-        view_component("Shaders/vertex.vert",
-                       "Shaders/fragment.frag",
-                       "Resources/Textures/block.jpg",
-                       "Resources/Fonts/Roboto-Regular.ttf"),
+        view_component(FileSystem::getPath("Shaders/vertex.vert"),
+                       FileSystem::getPath("Shaders/fragment.frag"),
+                       FileSystem::getPath("Resources/Textures/block.jpg"),
+                       FileSystem::getPath("Resources/Fonts/Roboto-Regular.ttf")),
         input_queue(view_component.get_window()),
-        sound_component(std::vector<std::string>{"Resources/Music/ThemeA.wav",
-                                                 "Resources/Music/ThemeB.wav",
-                                                 "Resources/Music/ThemeC.wav",
-                                                 "Resources/Music/ThemeD.wav"},
-                                                 "Resources/Music/Gameover.wav",
+        sound_component(std::vector<std::string>{FileSystem::getPath("Resources/Music/ThemeA.wav"),
+                                                 FileSystem::getPath("Resources/Music/ThemeB.wav"),
+                                                 FileSystem::getPath("Resources/Music/ThemeC.wav"),
+                                                 FileSystem::getPath("Resources/Music/ThemeD.wav")},
+                                                 FileSystem::getPath("Resources/Music/Gameover.wav"),
                                                  this),
 
         current_tetromino(static_cast<TetrominoUtil::TetrominoType>(rng_component.rng(0, 5)), this),

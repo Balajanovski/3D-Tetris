@@ -45,6 +45,8 @@ include_directories(${OPENAL_INCLUDE_DIR})
 
 set(PROJECT_SOURCE_DIR ${CMAKE_SOURCE_DIR}/Source)
 
+configure_file(${PROJECT_SOURCE_DIR}/Util/root_directory.h.in ${PROJECT_SOURCE_DIR}/Util/root_directory.h)
+
 file(GLOB SOURCE_FILES
         "${PROJECT_SOURCE_DIR}/*.h"
         "${PROJECT_SOURCE_DIR}/*.cpp"
