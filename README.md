@@ -5,9 +5,19 @@ Fully functional traditional tetris with 3D visuals using OpenGL.
 ## Dependencies
 * OpenGL
 * Make
+* Clang or GCC
 * GLFW3 : [Click here to download](http://www.glfw.org/)
+    * On Mac can be downloaded via Hombrew with `brew install glfw3`
+    * On Ubuntu can be downloaded via `sudo apt-get install glfw3`
 * Freetype2 : [Click here to download](https://www.freetype.org/)
+    * On Mac can be downloaded via Homebrew with `brew install freetype`
+    * [Tutorial for installing on Ubuntu](http://ubuntuhandbook.org/index.php/2017/06/install-freetype-2-8-in-ubuntu-16-04-17-04/)
 * CMake : [Click here to download](https://cmake.org/)
+    * On Mac can be downloaded via Homebrew with `brew install cmake`
+    * [Tutorial for installing on Ubuntu](https://askubuntu.com/questions/610291/how-to-install-cmake-3-2-on-ubuntu)
+* OpenAL Soft : [Click here to download](https://github.com/kcat/openal-soft)
+    * On Mac can be downloaded via Hombrew with `brew install openal-soft`
+    * On Ubuntu can be downloaded via `sudo apt-get install openal-soft`
 
 ## Installation instructions
 1. Install all of the dependencies above if you have not already.

@@ -100,19 +100,6 @@ const uint32_t Tetromino::possible_colors[TetrominoUtil::NUM_POSSIBLE_COLOURS] =
         0xFFFFFF, // White
 };
 
-// Lower bound is always zero
-int rotate_colors(int upper_bound) {
-    static int counter;
-    int previous_counter = counter;
-
-    ++counter;
-    if (counter > upper_bound) {
-        counter = 0;
-    }
-
-    return previous_counter;
-}
-
 Tetromino::Tetromino(TetrominoUtil::TetrominoType type, Game* game)
         : tetromino_type(type),
           tetromino_state(TetrominoUtil::TetrominoState::MOVING),

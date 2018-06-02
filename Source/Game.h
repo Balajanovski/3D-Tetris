@@ -11,6 +11,7 @@
 #include "InputQueue.h"
 #include "ViewComponent.h"
 #include "RandomNumberComponent.h"
+#include "SoundComponent.h"
 
 #include <vector>
 #include <glm/vec2.hpp>
@@ -33,6 +34,7 @@ private:
 
     ViewComponent view_component;
     InputQueue    input_queue;
+    SoundComponent sound_component;
 
     Tetromino current_tetromino;
     Tetromino ghost_tetromino; // Used to indicate where the tetromino will land

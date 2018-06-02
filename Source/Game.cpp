@@ -18,6 +18,7 @@ Game::Game() :
                        "Resources/Textures/block.jpg",
                        "Resources/Fonts/Roboto-Regular.ttf"),
         input_queue(view_component.get_window()),
+        sound_component(std::vector<std::string>{"Resources/Music/ThemeA.wav", "Resources/Music/ThemeB.wav"}, this),
 
         current_tetromino(static_cast<TetrominoUtil::TetrominoType>(rng_component.rng(0, 5)), this),
         ghost_tetromino(current_tetromino)
@@ -111,6 +112,9 @@ void Game::begin() {
         ++frames;
 
         view_component.swap_buffers();
+
+        // Play music
+        sound_component.play_music();
     }
 }
 

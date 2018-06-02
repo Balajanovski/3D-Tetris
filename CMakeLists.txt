@@ -34,6 +34,15 @@ else()
 endif()
 include_directories(${FREETYPE2_INCLUDE_DIRS})
 
+find_package(OpenAL REQUIRED)
+if (OPENAL_FOUND)
+    message("- OpenAL Located")
+else()
+    message("- error: OpenAL not Located")
+endif()
+include_directories(${OPENAL_INCLUDE_DIR})
+
+
 set(PROJECT_SOURCE_DIR ${CMAKE_SOURCE_DIR}/Source)
 
 file(GLOB SOURCE_FILES
@@ -55,6 +64,7 @@ add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME} LINK_PUBLIC
         ${GLFW_LIBRARIES}
         ${FREETYPE2_LIBRARIES}
+        ${OPENAL_LIBRARY}
         )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
