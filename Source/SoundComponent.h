@@ -42,15 +42,14 @@ private:
 
     int num_songs;
     int current_song;
-    bool playing_game_over_music = false;
-    bool playing_sfx = false;
 
     ALCdevice* device;
     ALCcontext* context;
 
-    ALuint music_source;
-    ALuint sfx_sources[MAX_NUM_SFX_SOURCES];
-    int sfx_sources_index = 0;
+    bool playing_game_over_mus = false;
+
+    std::vector<ALuint> playing_music_sources;
+    std::vector<ALuint> playing_sfx_sources;
 
     std::vector<ALuint> music_buffers;
     ALuint game_over_music_buffer;

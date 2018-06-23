@@ -254,6 +254,8 @@ int Game::window_control() {
         return GLFW_KEY_ESCAPE; // Exit function, because quit command was invoked
     }
 
+    sound_component.tick();
+
     return input_key;
 }
 

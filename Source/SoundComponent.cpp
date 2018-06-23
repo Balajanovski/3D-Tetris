@@ -62,27 +62,6 @@ SoundComponent::SoundComponent(const std::vector<std::string>& music_srcs,
     alListenerfv(AL_ORIENTATION, listener_orientation);
     check_for_al_error();
 
-    // Generate sources
-    // ---------------
-
-    // Generate music source
-    alGenSources(1, &music_source);
-    check_for_al_error();
-    alSourcei(music_source, AL_SOURCE_RELATIVE, AL_TRUE);
-    check_for_al_error();
-    alSource3f(music_source, AL_POSITION, 0.0f, 0.0f, 0.0f);
-    check_for_al_error();
-    alSourcef(music_source, AL_PITCH, 1);
-    check_for_al_error();
-    alSourcef(music_source, AL_GAIN, 0.5f);
-    check_for_al_error();
-    alSource3f(music_source, AL_VELOCITY, 0.0f, 0.0f, 0.0f);
-    check_for_al_error();
-    alSourcei(music_source, AL_LOOPING, AL_FALSE);
-    check_for_al_error();
-
-
-
     // Create music buffers
     // -------------------
     alGenBuffers(num_songs, &music_buffers[0]);
@@ -109,76 +88,137 @@ SoundComponent::SoundComponent(const std::vector<std::string>& music_srcs,
 }
 
 SoundComponent::~SoundComponent() {
-    alDeleteSources(1, &music_source);
+    alSourceStopv(playing_music_sources.size(), &playing_music_sources[0]);
+    check_for_al_error();
+    alSourceStopv(playing_sfx_sources.size(), &playing_sfx_sources[0]);
+    check_for_al_error();
+    alDeleteSources(playing_music_sources.size(), &playing_music_sources[0]);
+    check_for_al_error();
+    alDeleteSources(playing_sfx_sources.size(), &playing_sfx_sources[0]);
+    check_for_al_error();
     alDeleteBuffers(num_songs, &music_buffers[0]);
+    check_for_al_error();
     device = alcGetContextsDevice(context);
+    check_for_al_error();
     alcMakeContextCurrent(NULL);
+    check_for_al_error();
     alcDestroyContext(context);
+    check_for_al_error();
     alcCloseDevice(device);
+    check_for_al_error();
 }
 
 void SoundComponent::play_music() {
-    if (playing_game_over_music) {
-        alSourceStop(music_source);
-        check_for_al_error();
-        playing_game_over_music = false;
-    } else {
-        // Find out sound source state
-        ALint source_state;
-        alGetSourcei(music_source, AL_SOURCE_STATE, &source_state);
-        check_for_al_error();
 
-        if (source_state != AL_PLAYING) {
-            // Bind music to sources
-            alSourcei(music_source, AL_BUFFER, music_buffers[current_song]);
+    if (playing_game_over_mus) {
+        // Stop and clear all music sources
+        for (auto& source : playing_music_sources) {
+            alSourceStop(source);
             check_for_al_error();
-
-            alSourcePlay(music_source);
+            alDeleteSources(1, &source);
             check_for_al_error();
-
-            ++current_song;
-            if (current_song >= num_songs) {
-                current_song = 0;
-            }
         }
+        playing_music_sources.clear();
+
+        playing_game_over_mus = false;
     }
 
-
-}
-
-void SoundComponent::play_game_over_music() {
-    if (!playing_game_over_music) {
-        alSourceStop(music_source);
+    if (playing_music_sources.empty()) {
+        // Generate new music source
+        ALuint music_source;
+        alGenSources(1, &music_source);
+        check_for_al_error();
+        alSourcei(music_source, AL_SOURCE_RELATIVE, AL_TRUE);
+        check_for_al_error();
+        alSource3f(music_source, AL_POSITION, 0.0f, 0.0f, 0.0f);
+        check_for_al_error();
+        alSourcef(music_source, AL_PITCH, 1);
+        check_for_al_error();
+        alSourcef(music_source, AL_GAIN, 0.5f);
+        check_for_al_error();
+        alSource3f(music_source, AL_VELOCITY, 0.0f, 0.0f, 0.0f);
+        check_for_al_error();
+        alSourcei(music_source, AL_LOOPING, AL_FALSE);
         check_for_al_error();
 
-        alSourcei(music_source, AL_BUFFER, game_over_music_buffer);
+        // Bind music to sources
+        alSourcei(music_source, AL_BUFFER, music_buffers[current_song]);
         check_for_al_error();
 
+        // Play music
         alSourcePlay(music_source);
         check_for_al_error();
 
-        playing_game_over_music = true;
+        // Add source to playing queue
+        playing_music_sources.push_back(music_source);
+
+        // Change current song
+        ++current_song;
+        if (current_song >= num_songs) {
+            current_song = 0;
+        }
+    }
+}
+
+void SoundComponent::play_game_over_music() {
+    if (!playing_game_over_mus) {
+        // Stop and clear all music sources
+        for (auto& source : playing_music_sources) {
+            alSourceStop(source);
+            check_for_al_error();
+            alDeleteSources(1, &source);
+            check_for_al_error();
+        }
+        playing_music_sources.clear();
+
+        // Generate new music source
+        ALuint music_source;
+        alGenSources(1, &music_source);
+        check_for_al_error();
+        alSourcei(music_source, AL_SOURCE_RELATIVE, AL_TRUE);
+        check_for_al_error();
+        alSource3f(music_source, AL_POSITION, 0.0f, 0.0f, 0.0f);
+        check_for_al_error();
+        alSourcef(music_source, AL_PITCH, 1);
+        check_for_al_error();
+        alSourcef(music_source, AL_GAIN, 0.5f);
+        check_for_al_error();
+        alSource3f(music_source, AL_VELOCITY, 0.0f, 0.0f, 0.0f);
+        check_for_al_error();
+        alSourcei(music_source, AL_LOOPING, AL_FALSE);
+        check_for_al_error();
+
+        // Buffer game over music data
+        alSourcei(music_source, AL_BUFFER, game_over_music_buffer);
+        check_for_al_error();
+
+        // Play the music
+        alSourcePlay(music_source);
+        check_for_al_error();
+
+        // Add source to playing queue
+        playing_music_sources.push_back(music_source);
+
+        playing_game_over_mus = true;
     }
 }
 
 void SoundComponent::play_sfx(SoundUtil::SFXSound sfx) {
-
-
     // Generate sfx source
     ALuint new_source;
     alGenSources(1, &new_source);
     check_for_al_error();
-    alSourcei(music_source, AL_SOURCE_RELATIVE, AL_TRUE);
+    alSourcei(new_source, AL_SOURCE_RELATIVE, AL_TRUE);
     check_for_al_error();
-    alSource3f(music_source, AL_POSITION, 0.0f, 0.0f, 0.0f);
+    alSource3f(new_source, AL_POSITION, 0.0f, 0.0f, 0.0f);
     check_for_al_error();
-    alSourcef(music_source, AL_PITCH, 1);
+    alSourcef(new_source, AL_PITCH, 1);
     check_for_al_error();
-    alSourcef(music_source, AL_GAIN, 1.0f);
+    alSourcef(new_source, AL_GAIN, 1.0f);
     check_for_al_error();
-    alSource3f(music_source, AL_VELOCITY, 0.0f, 0.0f, 0.0f);
+    alSource3f(new_source, AL_VELOCITY, 0.0f, 0.0f, 0.0f);
     check_for_al_error();
-    alSourcei(music_source, AL_LOOPING, AL_FALSE);
+    alSourcei(new_source, AL_LOOPING, AL_FALSE);
     check_for_al_error();
 
     // Append sfx buffer to source
@@ -189,24 +229,40 @@ void SoundComponent::play_sfx(SoundUtil::SFXSound sfx) {
     alSourcePlay(new_source);
     check_for_al_error();
 
-    // Add source to freeing queue
-    if (sfx_sources_index < MAX_NUM_SFX_SOURCES) {
-        sfx_sources[sfx_sources_index++] = new_source;
-    }
-
+    // Add source to playing queue
+    playing_sfx_sources.push_back(new_source);
 }
 
 void SoundComponent::tick() {
-    for (int i = 0; i < MAX_NUM_SFX_SOURCES; ++i) {
-        // Find out sound source state
+    // Clear all music sources that have finished playing
+    for (auto source_iter = playing_music_sources.begin(); source_iter != playing_music_sources.end();) {
         ALint source_state;
-        alGetSourcei(sfx_sources[i], AL_SOURCE_STATE, &source_state);
+        alGetSourcei(*source_iter, AL_SOURCE_STATE, &source_state);
         check_for_al_error();
 
-        // Free source if not playing sound
         if (source_state == AL_STOPPED) {
-            alDeleteSources(1, &sfx_sources[i]);
+            alDeleteSources(1, &(*source_iter));
             check_for_al_error();
+
+            source_iter = playing_music_sources.erase(source_iter);
+        } else {
+            ++source_iter;
+        }
+    }
+
+    // Clear all sfx sources that have finished playing
+    for (auto source_iter = playing_sfx_sources.begin(); source_iter != playing_sfx_sources.end();) {
+        ALint source_state;
+        alGetSourcei(*source_iter, AL_SOURCE_STATE, &source_state);
+        check_for_al_error();
+
+        if (source_state == AL_STOPPED) {
+            alDeleteSources(1, &(*source_iter));
+            check_for_al_error();
+
+            source_iter = playing_sfx_sources.erase(source_iter);
+        } else {
+            ++source_iter;
         }
     }
 }
